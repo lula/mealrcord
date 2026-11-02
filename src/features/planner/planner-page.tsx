@@ -62,7 +62,6 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { RichText } from "@/components/rich-text";
 import { toPlainText } from "@/lib/rich-text";
-import { formatNumber } from "@/lib/units";
 import { cn } from "@/lib/utils";
 import { useMeals } from "@/features/meals/api";
 import { MealFilter } from "@/features/meals/meal-filter";
@@ -202,7 +201,6 @@ export function PlannerPage() {
                 </SheetTitle>
                 <SheetDescription className="capitalize">
                   {format(parseISO(selected.date), "EEEE d MMMM")} · {selected.guests} coperti
-                  {selected.coefficient !== 1 && ` · ×${formatNumber(selected.coefficient)}`}
                 </SheetDescription>
               </SheetHeader>
               {/* Only the body scrolls: header and footer stay in place. */}
@@ -571,7 +569,6 @@ function DayView({ entries, onAdd, onEdit }: { entries: PlannedEntry[]; onAdd: (
               <Badge variant="secondary">
                 <Users /> {e.guests} coperti
               </Badge>
-              {e.coefficient !== 1 && <Badge variant="outline">×{formatNumber(e.coefficient)}</Badge>}
               {toPlainText(e.notes)}
             </CardDescription>
             <CardAction className="flex gap-1">
@@ -648,7 +645,6 @@ function MealOccurrences({ entries, onSelect, onAdd }: { entries: PlannedEntry[]
                         <Badge variant="secondary">
                           <Users /> {e.guests}
                         </Badge>
-                        {e.coefficient !== 1 && <Badge variant="outline">×{formatNumber(e.coefficient)}</Badge>}
                       </ItemActions>
                     </button>
                   </Item>

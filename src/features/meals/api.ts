@@ -8,6 +8,7 @@ export const COURSE_LABELS: Record<Course, string> = {
   starter: "Antipasti",
   first: "Primi",
   main: "Secondi",
+  side: "Contorni",
   dessert: "Dolci",
 };
 
@@ -16,6 +17,7 @@ export const COURSE_TAG_ID: Record<Course, string> = {
   starter: "tag-starter",
   first: "tag-first",
   main: "tag-main",
+  side: "tag-side",
   dessert: "tag-dessert",
 };
 

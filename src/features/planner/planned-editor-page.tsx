@@ -42,19 +42,18 @@ const schema = z.object({
   slot: z.string().trim().min(1, "Indica il servizio"),
   mealId: z.string().min(1, "Scegli un menu"),
   guests,
-  coefficient,
-  /** null = same as the planned meal. */
-  courseCoefficients: z.object({ starter: courseCoefficient, first: courseCoefficient, main: courseCoefficient, dessert: courseCoefficient }),
+  /** null = 1. */
+  courseCoefficients: z.object({ starter: courseCoefficient, first: courseCoefficient, main: courseCoefficient, side: courseCoefficient, dessert: courseCoefficient }),
   /** Guests by recipe id. Filled with an even split until the user edits them. */
   recipeGuests: z.record(z.string(), guests.nullish()),
-  /** Coefficient of the "piatti unici"; null = same as the planned meal. */
+  /** Coefficient of the "piatti unici"; null = 1. */
   dishCoefficient: courseCoefficient,
   /** Guests by dish id, like recipeGuests. */
   dishGuests: z.record(z.string(), guests.nullish()),
   notes: z.string(),
 });
 
-const NO_COURSE_COEFFICIENTS = { starter: null, first: null, main: null, dessert: null };
+const NO_COURSE_COEFFICIENTS = { starter: null, first: null, main: null, side: null, dessert: null };
 
 type FormValues = z.infer<typeof schema>;
 
@@ -104,7 +103,6 @@ export function PlannedEditorPage() {
             slot: entry.slot,
             mealId: entry.mealId,
             guests: entry.guests,
-            coefficient: entry.coefficient,
             courseCoefficients: {
               ...NO_COURSE_COEFFICIENTS,
               ...Object.fromEntries(entry.courseCoefficients.map((c) => [c.course, c.coefficient])),
@@ -119,7 +117,6 @@ export function PlannedEditorPage() {
             slot: "Pranzo",
             mealId: initialMealId ?? "",
             guests: 20,
-            coefficient: 1,
             courseCoefficients: NO_COURSE_COEFFICIENTS,
             recipeGuests: {},
             dishCoefficient: null,
@@ -155,7 +152,6 @@ export function PlannedEditorPage() {
   useEffect(() => {
     if (takenKey) setDays((ds) => ds.filter((d) => !takenKey.split(",").includes(d)));
   }, [takenKey]);
-  const plannedCoefficient = form.watch("coefficient");
   const plannedGuests = form.watch("guests");
   const mealRecipes = meals.find((m) => m.id === mealId)?.recipes ?? [];
   const mealDishes = meals.find((m) => m.id === mealId)?.dishes ?? [];
@@ -227,7 +223,6 @@ export function PlannedEditorPage() {
     scalingMeal && scalingMeal.id === mealId
       ? {
           guests: total,
-          coefficient: Number.isFinite(plannedCoefficient) ? plannedCoefficient : 1,
           courseCoefficients: COURSES.flatMap((course) => {
             const coefficient = courseCoefficientValues?.[course];
             return coefficient != null && Number.isFinite(coefficient) ? [{ course, coefficient }] : [];
@@ -403,18 +398,11 @@ export function PlannedEditorPage() {
                   />
                   <FieldError errors={[errors.mealId]} />
                 </Field>
-                <div className="grid grid-cols-2 gap-4">
-                  <Field data-invalid={!!errors.guests}>
-                    <FieldLabel htmlFor="guests">Coperti</FieldLabel>
-                    <Input id="guests" type="number" min={1} step={1} {...form.register("guests", { valueAsNumber: true })} />
-                    <FieldError errors={[errors.guests]} />
-                  </Field>
-                  <Field data-invalid={!!errors.coefficient}>
-                    <FieldLabel htmlFor="coefficient">Coefficiente quantità</FieldLabel>
-                    <Input id="coefficient" type="number" step="0.05" min={0.05} {...form.register("coefficient", { valueAsNumber: true })} />
-                    <FieldError errors={[errors.coefficient]} />
-                  </Field>
-                </div>
+                <Field data-invalid={!!errors.guests} className="max-w-48">
+                  <FieldLabel htmlFor="guests">Coperti</FieldLabel>
+                  <Input id="guests" type="number" min={1} step={1} {...form.register("guests", { valueAsNumber: true })} />
+                  <FieldError errors={[errors.guests]} />
+                </Field>
                 <Field>
                   <FieldLabel htmlFor="notes">Note</FieldLabel>
                   <Controller
@@ -457,7 +445,7 @@ export function PlannedEditorPage() {
                                 step="0.05"
                                 min={0.05}
                                 className="h-8 w-20"
-                                proposed={plannedCoefficient}
+                                proposed={1}
                                 value={field.value}
                                 onChange={field.onChange}
                                 onBlur={field.onBlur}
@@ -527,7 +515,7 @@ export function PlannedEditorPage() {
                               step="0.05"
                               min={0.05}
                               className="h-8 w-20"
-                              proposed={plannedCoefficient}
+                              proposed={1}
                               value={field.value}
                               onChange={field.onChange}
                               onBlur={field.onBlur}

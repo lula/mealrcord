@@ -12,7 +12,6 @@ export async function exportJson(path: string) {
     tags: await db.select().from(s.tags),
     recipes: await db.select().from(s.recipes),
     recipeIngredients: await db.select().from(s.recipeIngredients),
-    recipeSteps: await db.select().from(s.recipeSteps),
     recipeTags: await db.select().from(s.recipeTags),
     meals: await db.select().from(s.meals),
     mealRecipes: await db.select().from(s.mealRecipes),

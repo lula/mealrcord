@@ -142,12 +142,9 @@ export type ScaledRecipe = {
   lines: (QuantityLine & { key: string })[];
 };
 
-/** Coefficient of one course: its own if set, else the planned meal's. */
-export function courseCoefficient(
-  entry: { coefficient: number; courseCoefficients: { course: Course; coefficient: number }[] },
-  course: Course,
-): number {
-  return entry.courseCoefficients.find((c) => c.course === course)?.coefficient ?? entry.coefficient;
+/** Coefficient of one course: its own if set, else 1. */
+export function courseCoefficient(entry: { courseCoefficients: { course: Course; coefficient: number }[] }, course: Course): number {
+  return entry.courseCoefficients.find((c) => c.course === course)?.coefficient ?? 1;
 }
 
 /**
@@ -178,10 +175,9 @@ export function exceedsGuests(courseTotal: number, total: number, percent: numbe
 /** What scaling needs: a planned meal, or the values being edited in the form. */
 export type ScalableEntry = {
   guests: number;
-  coefficient: number;
   courseCoefficients: { course: Course; coefficient: number }[];
   recipeGuests: { recipeId: string; guests: number }[];
-  /** Coefficient of the menu's "piatti unici"; null = `coefficient`. */
+  /** Coefficient of the menu's "piatti unici"; null = 1. */
   dishCoefficient: number | null;
   dishGuests: { dishId: string; guests: number }[];
   meal: PlannedEntry["meal"];
@@ -232,7 +228,7 @@ export type ScaledDish = {
  */
 export function scalePlannedDishes(entry: ScalableEntry): { coefficient: number; dishes: ScaledDish[] } | null {
   if (entry.meal.dishes.length === 0) return null;
-  const coefficient = entry.dishCoefficient ?? entry.coefficient;
+  const coefficient = entry.dishCoefficient ?? 1;
   const overrides = Object.fromEntries(entry.dishGuests.map((g) => [g.dishId, g.guests]));
   const guestsById = courseGuests(entry.guests, entry.meal.dishes.map((md) => md.dishId), overrides);
   return {
@@ -279,12 +275,11 @@ export type PlannedInput = {
   slot: string;
   mealId: string;
   guests: number;
-  coefficient: number;
-  /** Per-course coefficient; null or missing = use `coefficient`. */
+  /** Per-course coefficient; null or missing = 1. */
   courseCoefficients?: Partial<Record<Course, number | null>>;
   /** Per-recipe guests, by recipe id; null or missing = use `guests`. */
   recipeGuests?: Record<string, number | null>;
-  /** Coefficient of the "piatti unici"; null or missing = use `coefficient`. */
+  /** Coefficient of the "piatti unici"; null or missing = 1. */
   dishCoefficient?: number | null;
   /** Per-dish guests, by dish id; null or missing = even split. */
   dishGuests?: Record<string, number | null>;
@@ -354,7 +349,6 @@ export async function copyPlanned({ id, date }: { id: string; date: string }): P
     slot: p.slot,
     mealId: p.mealId,
     guests: p.guests,
-    coefficient: p.coefficient,
     notes: p.notes,
     courseCoefficients: Object.fromEntries(p.courseCoefficients.map((c) => [c.course, c.coefficient])),
     recipeGuests: Object.fromEntries(p.recipeGuests.map((g) => [g.recipeId, g.guests])),

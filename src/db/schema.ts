@@ -2,7 +2,7 @@
 import { relations } from "drizzle-orm";
 import { integer, primaryKey, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
-export const COURSES = ["starter", "first", "main", "dessert"] as const;
+export const COURSES = ["starter", "first", "main", "side", "dessert"] as const;
 export type Course = (typeof COURSES)[number];
 
 export const DIMENSIONS = ["mass", "volume", "other"] as const;
@@ -48,18 +48,6 @@ export const recipeIngredients = sqliteTable(
     position: integer("position").notNull().default(0),
   },
   (t) => [primaryKey({ columns: [t.recipeId, t.ingredientId] })],
-);
-
-export const recipeSteps = sqliteTable(
-  "recipe_steps",
-  {
-    recipeId: text("recipe_id")
-      .notNull()
-      .references(() => recipes.id),
-    position: integer("position").notNull(),
-    text: text("text").notNull(),
-  },
-  (t) => [primaryKey({ columns: [t.recipeId, t.position] })],
 );
 
 export const tags = sqliteTable("tags", {
@@ -158,9 +146,7 @@ export const plannedMeals = sqliteTable(
       .notNull()
       .references(() => meals.id),
     guests: integer("guests").notNull(),
-    /** Quantity coefficient (e.g. 0.7 when there are many courses). */
-    coefficient: real("coefficient").notNull().default(1),
-    /** Coefficient of the menu's dishes; null = `coefficient`. */
+    /** Coefficient of the menu's dishes; null = 1. */
     dishCoefficient: real("dish_coefficient"),
     notes: text("notes").notNull().default(""),
     position: integer("position").notNull().default(0),
@@ -169,7 +155,7 @@ export const plannedMeals = sqliteTable(
   (t) => [uniqueIndex("planned_meals_unique_meal_day").on(t.date, t.mealId)],
 );
 
-/** Per-course override of the planned meal coefficient. No row = use the planned meal's. */
+/** Per-course quantity coefficient. No row = 1. */
 export const plannedMealCourseCoefficients = sqliteTable(
   "planned_meal_course_coefficients",
   {
@@ -228,7 +214,6 @@ export const ingredientsRelations = relations(ingredients, ({ one, many }) => ({
 export const recipesRelations = relations(recipes, ({ many }) => ({
   dishRecipes: many(dishRecipes),
   ingredients: many(recipeIngredients),
-  steps: many(recipeSteps),
   tags: many(recipeTags),
   mealRecipes: many(mealRecipes),
 }));
@@ -237,10 +222,6 @@ export const recipeIngredientsRelations = relations(recipeIngredients, ({ one })
   recipe: one(recipes, { fields: [recipeIngredients.recipeId], references: [recipes.id] }),
   ingredient: one(ingredients, { fields: [recipeIngredients.ingredientId], references: [ingredients.id] }),
   unit: one(units, { fields: [recipeIngredients.unitId], references: [units.id] }),
-}));
-
-export const recipeStepsRelations = relations(recipeSteps, ({ one }) => ({
-  recipe: one(recipes, { fields: [recipeSteps.recipeId], references: [recipes.id] }),
 }));
 
 export const tagsRelations = relations(tags, ({ many }) => ({

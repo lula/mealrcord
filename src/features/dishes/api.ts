@@ -43,7 +43,7 @@ export type DishInput = {
 
 export async function saveDish(input: DishInput): Promise<string> {
   const { maxDishRecipes } = await getSettings();
-  if (input.recipes.length === 0) throw new Error("Aggiungi almeno una ricetta");
+  if (input.recipes.length === 0 || input.recipes.length === 1) throw new Error("Aggiungi almeno due ricette");
   if (input.recipes.length > maxDishRecipes) throw new Error(`Un piatto unico può avere al massimo ${maxDishRecipes} ricette`);
   if (new Set(input.recipes.map((r) => r.recipeId)).size !== input.recipes.length) throw new Error("Una ricetta può comparire una sola volta");
 

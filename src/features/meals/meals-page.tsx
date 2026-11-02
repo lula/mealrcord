@@ -9,7 +9,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import {
   AlertDialog,
@@ -25,6 +25,7 @@ import { COURSES } from "@/db/schema";
 import { toPlainText } from "@/lib/rich-text";
 import { RecipeDetailDialog } from "@/features/recipes/recipe-detail-dialog";
 import { COURSE_LABELS, plannedUsageCount, useDeleteMeal, useDuplicateMeal, useMeals, useRemoveFromPlanner, type MealListItem } from "./api";
+import { format } from "date-fns";
 
 export function MealsPage() {
   const { data: meals, isLoading } = useMeals();
@@ -145,14 +146,7 @@ export function MealsPage() {
                       </Link>
                     </CardTitle>
                     <CardDescription className="flex flex-wrap items-center gap-2">
-                      {m.planned.length > 0 && (
-                        <Badge variant="secondary" asChild>
-                          <Link to="/planner" search={{ meal: m.id }} title="Vedi le date nel planner">
-                            <Lock /> Nel planner ({m.planned.length})
-                          </Link>
-                        </Badge>
-                      )}
-                      {toPlainText(m.notes) || " "}
+                      {toPlainText(m.notes) || " "}
                     </CardDescription>
                     <CardAction>
                       {m.planned.length > 0 ? (
@@ -202,23 +196,13 @@ export function MealsPage() {
                       </DropdownMenu>
                     </CardAction>
                   </CardHeader>
-                  <CardContent className="space-y-2 text-sm">
+                  <CardContent className="space-y-2 text-sm h-full">
                     {COURSES.map((c) => {
                       const items = m.recipes.filter((r) => r.course === c);
-                      if (!items.length) return null;
+                      // if (!items.length) return null;
                       return (
                         <div key={c}>
-                          <div className="text-muted-foreground text-xs font-medium uppercase">{COURSE_LABELS[c]}</div>
-                          <div>
-                            {items.map((r, i) => (
-                              <span key={r.recipeId}>
-                                {i > 0 && " · "}
-                                <button type="button" className="hover:text-primary cursor-pointer hover:underline" onClick={() => setViewing(r.recipeId)}>
-                                  {r.recipe.name}
-                                </button>
-                              </span>
-                            ))}
-                          </div>
+                          <div className="text-muted-foreground text-xs font-medium uppercase">{COURSE_LABELS[c]} ({items?.length ?? 0})</div>
                         </div>
                       );
                     })}
@@ -238,6 +222,17 @@ export function MealsPage() {
                       </div>
                     )}
                   </CardContent>
+                  <CardFooter className="flex flex-wrap gap-2 items-center">
+                    <Badge variant="outline">
+                      {format(m.createdAt, 'dd/MM/yyyy')}
+                    </Badge>
+                    {m.planned?.length > 0 ? <Badge variant="secondary" asChild>
+                      <Link to="/planner" search={{ meal: m.id }} title="Vedi le date nel planner">
+                        <Lock /> Nel planner ({m.planned.length})
+                      </Link>
+                    </Badge>
+                      : <Badge variant="secondary">Non pianificato</Badge>}
+                  </CardFooter>
                 </Card>
               ))}
             </div>

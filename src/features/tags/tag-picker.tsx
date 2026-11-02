@@ -94,13 +94,20 @@ export function TagPicker({
 }
 
 export function TagBadges({ tags }: { tags: { id: string; name: string; isSystem: boolean }[] }) {
-  return (
+  return (<>
     <div className="flex flex-wrap gap-1">
-      {tags.map((t) => (
-        <Badge key={t.id} variant={t.isSystem ? "default" : "secondary"}>
+      {tags.filter(t => t.isSystem).map((t) => (
+        <Badge key={t.id} variant="default">
           {t.name}
         </Badge>
       ))}
     </div>
-  );
+    <div className="flex flex-wrap gap-1">
+      {tags.filter(t => !t.isSystem).map((t) => (
+        <Badge key={t.id} variant="secondary">
+          {t.name}
+        </Badge>
+      ))}
+    </div>
+  </>);
 }

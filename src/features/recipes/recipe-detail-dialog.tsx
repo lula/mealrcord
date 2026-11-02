@@ -61,19 +61,6 @@ export function RecipeDetailDialog({ recipeId, onClose }: { recipeId: string | n
                     </Table>
                   )}
                 </section>
-
-                {recipe.steps.length > 0 && (
-                  <section className="space-y-2">
-                    <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">Preparazione</h3>
-                    <ol className="list-decimal space-y-2 pl-5 text-sm">
-                      {recipe.steps.map((st) => (
-                        <li key={st.position}>
-                          <RichText value={st.text} />
-                        </li>
-                      ))}
-                    </ol>
-                  </section>
-                )}
               </div>
             </ScrollArea>
 

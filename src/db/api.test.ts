@@ -29,7 +29,6 @@ async function seed() {
       { ingredientId: flour, quantity: 400, unitId: "unit-g" },
       { ingredientId: eggs, quantity: 4, unitId: "unit-pcs" },
     ],
-    steps: ["Impastare farina e uova", "  ", "Stendere e tagliare"],
     tagIds: ["tag-first"],
   });
   const cake = await saveRecipe({
@@ -37,13 +36,12 @@ async function seed() {
     description: "",
     baseServings: 8,
     ingredients: [{ ingredientId: flour, quantity: 0.3, unitId: "unit-kg" }],
-    steps: [],
     tagIds: ["tag-dessert"],
   });
   const meal = await saveMeal({
     name: "Menu del giorno",
     notes: "",
-    courses: { starter: [], first: [pasta], main: [], dessert: [cake] },
+    courses: { starter: [], first: [pasta], main: [], side: [], dessert: [cake] },
   });
   return { flour, eggs, pasta, cake, meal };
 }
@@ -83,31 +81,29 @@ describe("data layer", () => {
     expect(r?.ingredients.map((i) => i.ingredient.name)).toEqual(["Farina", "Uova"]);
     expect(r?.ingredients[0].unit.symbol).toBe("g");
     expect(r?.tags.map((t) => t.tag.name)).toEqual(["Primo"]);
-    expect(r?.steps.map((st) => st.text)).toEqual(["Impastare farina e uova", "Stendere e tagliare"]);
   });
 
   it("replaces ingredients on update", async () => {
     const { pasta, flour } = await seed();
-    await saveRecipe({ id: pasta, name: "Tagliatelle", description: "x", baseServings: 2, ingredients: [{ ingredientId: flour, quantity: 200, unitId: "unit-g" }], steps: ["Cuocere"], tagIds: [] });
+    await saveRecipe({ id: pasta, name: "Tagliatelle", description: "x", baseServings: 2, ingredients: [{ ingredientId: flour, quantity: 200, unitId: "unit-g" }], tagIds: [] });
     const r = await getRecipe(pasta);
     expect(r?.baseServings).toBe(2);
     expect(r?.ingredients).toHaveLength(1);
     expect(r?.tags).toHaveLength(0);
-    expect(r?.steps.map((st) => st.text)).toEqual(["Cuocere"]);
   });
 
   it("rolls back a failed batch", async () => {
     const { pasta } = await seed();
     await expect(
-      saveRecipe({ id: pasta, name: "Rotto", description: "", baseServings: 4, ingredients: [{ ingredientId: "missing", quantity: 1, unitId: "unit-g" }], steps: [], tagIds: [] }),
+      saveRecipe({ id: pasta, name: "Rotto", description: "", baseServings: 4, ingredients: [{ ingredientId: "missing", quantity: 1, unitId: "unit-g" }], tagIds: [] }),
     ).rejects.toThrow();
     expect((await getRecipe(pasta))?.name).toBe("Tagliatelle");
   });
 
   it("rejects a meal with no recipes or a repeated recipe", async () => {
     const { pasta, meal } = await seed();
-    await expect(saveMeal({ name: "Vuoto", notes: "", courses: { starter: [], first: [], main: [], dessert: [] } })).rejects.toThrow(/almeno una ricetta/);
-    await expect(saveMeal({ name: "Doppio", notes: "", courses: { starter: [], first: [pasta], main: [pasta], dessert: [] } })).rejects.toThrow(/una sola volta/);
+    await expect(saveMeal({ name: "Vuoto", notes: "", courses: { starter: [], first: [], main: [], side: [], dessert: [] } })).rejects.toThrow(/almeno una ricetta/);
+    await expect(saveMeal({ name: "Doppio", notes: "", courses: { starter: [], first: [pasta], main: [pasta], side: [], dessert: [] } })).rejects.toThrow(/una sola volta/);
     // The database enforces it too.
     await expect(db.batch([db.insert(mealRecipes).values({ mealId: meal, recipeId: pasta, course: "main" })])).rejects.toThrow(/UNIQUE/);
   });
@@ -127,7 +123,6 @@ describe("data layer", () => {
       date: "2026-11-02",
       slot: "Cena",
       guests: 30,
-      coefficient: 0.8,
       courseCoefficients: { dessert: 0.5 },
       recipeGuests: { [pasta]: 12 },
       notes: "<p>nota</p>",
@@ -141,14 +136,14 @@ describe("data layer", () => {
       [copyId, "2026-11-05"],
     ]);
     const copy = entries[1];
-    expect([copy.slot, copy.guests, copy.coefficient, copy.notes]).toEqual(["Cena", 30, 0.8, "<p>nota</p>"]);
+    expect([copy.slot, copy.guests, copy.notes]).toEqual(["Cena", 30, "<p>nota</p>"]);
     expect(copy.courseCoefficients.map((c) => [c.course, c.coefficient])).toEqual([["dessert", 0.5]]);
     expect(copy.recipeGuests.map((g) => [g.recipeId, g.guests])).toEqual([[pasta, 12]]);
   });
 
   it("plans a menu at most once per day", async () => {
     const { meal } = await seed();
-    const base = { mealId: meal, guests: 10, coefficient: 1, notes: "" };
+    const base = { mealId: meal, guests: 10, notes: "" };
     const lunch = await plannerApi.savePlanned({ ...base, date: "2026-11-02", slot: "Pranzo" });
     const other = await plannerApi.savePlanned({ ...base, date: "2026-11-03", slot: "Pranzo" });
 
@@ -163,11 +158,11 @@ describe("data layer", () => {
 
   it("plans a menu on several days at once, or on none if one is taken", async () => {
     const { meal, pasta } = await seed();
-    const base = { mealId: meal, slot: "Pranzo", guests: 10, coefficient: 0.9, notes: "", recipeGuests: { [pasta]: 6 } };
+    const base = { mealId: meal, slot: "Pranzo", guests: 10, notes: "", recipeGuests: { [pasta]: 6 }, courseCoefficients: { first: 0.9 } };
     const ids = await plannerApi.savePlannedOnDays({ ...base, dates: ["2026-11-02", "2026-11-04"] });
     expect(ids).toHaveLength(2);
     const entries = await plannerApi.fetchPlanned("2026-11-02", "2026-11-08");
-    expect(entries.map((e) => [e.date, e.coefficient, e.recipeGuests[0]?.guests])).toEqual([
+    expect(entries.map((e) => [e.date, e.courseCoefficients[0]?.coefficient, e.recipeGuests[0]?.guests])).toEqual([
       ["2026-11-02", 0.9, 6],
       ["2026-11-04", 0.9, 6],
     ]);
@@ -191,10 +186,10 @@ describe("data layer", () => {
 
     // Bowl: tagliatelle at half portion, torta at full.
     const bowl = await saveDish({ name: "Bowl", notes: "", recipes: [{ recipeId: pasta, coefficient: 0.5 }, { recipeId: cake, coefficient: 1 }] });
-    const menu = await saveMeal({ name: "Solo bowl", notes: "", courses: { starter: [], first: [], main: [], dessert: [] }, dishIds: [bowl] });
+    const menu = await saveMeal({ name: "Solo bowl", notes: "", courses: { starter: [], first: [], main: [], side: [], dessert: [] }, dishIds: [bowl] });
 
-    // 40 guests, dish coefficient 0.8 (planned coefficient 1).
-    const id = await plannerApi.savePlanned({ mealId: menu, date: "2026-11-02", slot: "Pranzo", guests: 40, coefficient: 1, dishCoefficient: 0.8, notes: "" });
+    // 40 guests, dish coefficient 0.8.
+    const id = await plannerApi.savePlanned({ mealId: menu, date: "2026-11-02", slot: "Pranzo", guests: 40, dishCoefficient: 0.8, notes: "" });
     const [entry] = await plannerApi.fetchPlanned("2026-11-02", "2026-11-02");
     const scaled = plannerApi.scalePlannedDishes(entry)!;
     expect(scaled.coefficient).toBe(0.8);
@@ -205,7 +200,7 @@ describe("data layer", () => {
     expect([+flourLine.quantity.toFixed(3), flourLine.unit.symbol]).toEqual([2.8, "kg"]);
 
     // Per-dish guests and copies keep them.
-    await plannerApi.savePlanned({ id, mealId: menu, date: "2026-11-02", slot: "Pranzo", guests: 40, coefficient: 1, dishCoefficient: 0.8, dishGuests: { [bowl]: 10 }, notes: "" });
+    await plannerApi.savePlanned({ id, mealId: menu, date: "2026-11-02", slot: "Pranzo", guests: 40, dishCoefficient: 0.8, dishGuests: { [bowl]: 10 }, notes: "" });
     const copyId = await plannerApi.copyPlanned({ id, date: "2026-11-03" });
     const [copy] = await plannerApi.fetchPlanned("2026-11-03", "2026-11-03");
     expect([copy.id, copy.dishCoefficient, copy.dishGuests.map((g) => g.guests)]).toEqual([copyId, 0.8, [10]]);
@@ -218,7 +213,7 @@ describe("data layer", () => {
   it("removes a menu from every plan, keeping the menu", async () => {
     const { meal, pasta } = await seed();
     const { removeFromPlanner } = await import("@/features/meals/api");
-    const base = { mealId: meal, slot: "Pranzo", guests: 10, coefficient: 1, notes: "", recipeGuests: { [pasta]: 4 }, courseCoefficients: { first: 0.5 } };
+    const base = { mealId: meal, slot: "Pranzo", guests: 10, notes: "", recipeGuests: { [pasta]: 4 }, courseCoefficients: { first: 0.5 } };
     await plannerApi.savePlannedOnDays({ ...base, dates: ["2026-10-01", "2026-11-02"] });
     await removeFromPlanner(meal);
     expect(await plannerApi.fetchPlannedForMeal(meal)).toEqual([]);
@@ -236,13 +231,13 @@ describe("data layer", () => {
     await db.insert(plannedMeals).values({ id: "p1", date: "2026-11-02", slot: "Pranzo", mealId: meal, guests: 40 }).run();
     expect(await plannedUsageCount(meal)).toBe(1);
     // A planned menu can no longer be edited.
-    await expect(saveMeal({ id: meal, name: "Cambiato", notes: "", courses: { starter: [], first: [pasta], main: [], dessert: [] } })).rejects.toThrow(/non si può più modificare/);
+    await expect(saveMeal({ id: meal, name: "Cambiato", notes: "", courses: { starter: [], first: [pasta], main: [], side: [], dessert: [] } })).rejects.toThrow(/non si può più modificare/);
   });
 
   it("scales planned meals to guests and builds the shopping list", async () => {
     const { meal, pasta } = await seed();
-    // Dessert overrides the planned coefficient (0.8) with its own (0.5).
-    const plan = { mealId: meal, coefficient: 0.8, courseCoefficients: { dessert: 0.5 }, notes: "" };
+    // Each course has its own coefficient.
+    const plan = { mealId: meal, courseCoefficients: { first: 0.8, dessert: 0.5 }, notes: "" };
     const cenaId = await plannerApi.savePlanned({ ...plan, date: "2026-11-02", slot: "Cena", guests: 40 });
     // A menu goes once per day: lunch uses a copy (same recipes, so the same quantities).
     const lunchMeal = await duplicateMeal(meal);

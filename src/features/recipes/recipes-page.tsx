@@ -125,7 +125,7 @@ export function RecipesPage() {
                           {r.name}
                         </Link>
                       </CardTitle>
-                      <CardDescription className="line-clamp-2">{toPlainText(r.description) || "\u00a0"}</CardDescription>
+                      {/* <CardDescription className="line-clamp-2">{toPlainText(r.description) || "\u00a0"}</CardDescription> */}
                       <CardAction>
                         <Button variant="ghost" size="icon" aria-label="Modifica" title="Modifica" asChild>
                           <Link to="/recipes/$recipeId" params={{ recipeId: r.id }}>

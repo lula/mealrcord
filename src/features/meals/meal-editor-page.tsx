@@ -23,6 +23,7 @@ const courses = z.object({
   starter: z.array(z.string()),
   first: z.array(z.string()),
   main: z.array(z.string()),
+  side: z.array(z.string()),
   dessert: z.array(z.string()),
 });
 
@@ -41,7 +42,7 @@ const schema = z
 
 type FormValues = z.infer<typeof schema>;
 
-const EMPTY: FormValues = { name: "", notes: "", courses: { starter: [], first: [], main: [], dessert: [] }, dishIds: [] };
+const EMPTY: FormValues = { name: "", notes: "", courses: { starter: [], first: [], main: [], side: [], dessert: [] }, dishIds: [] };
 
 export function MealEditorPage() {
   const { mealId } = useParams({ strict: false });

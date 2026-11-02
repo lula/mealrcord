@@ -28,13 +28,12 @@ const schema = z.object({
       unitId: z.string().min(1, "Unità"),
     }),
   ),
-  steps: z.array(z.object({ text: z.string() })),
   tagIds: z.array(z.string()),
 });
 
 type FormValues = z.infer<typeof schema>;
 
-const EMPTY: FormValues = { name: "", description: "", baseServings: 2, ingredients: [], steps: [], tagIds: [] };
+const EMPTY: FormValues = { name: "", description: "", baseServings: 2, ingredients: [], tagIds: [] };
 
 function toForm(r: RecipeDetail): FormValues {
   return {
@@ -42,7 +41,6 @@ function toForm(r: RecipeDetail): FormValues {
     description: r.description,
     baseServings: r.baseServings,
     ingredients: r.ingredients.map(({ ingredientId, quantity, unitId }) => ({ ingredientId, quantity, unitId })),
-    steps: r.steps.map((st) => ({ text: st.text })),
     tagIds: r.tags.map((t) => t.tagId),
   };
 }
@@ -55,14 +53,13 @@ export function RecipeEditorPage() {
 
   const form = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: EMPTY });
   const lines = useFieldArray({ control: form.control, name: "ingredients" });
-  const steps = useFieldArray({ control: form.control, name: "steps" });
 
   useEffect(() => {
     form.reset(recipe ? toForm(recipe) : EMPTY);
   }, [recipe, form]);
 
   const onSubmit = form.handleSubmit(async (values) => {
-    await save.mutateAsync({ id: recipeId, ...values, steps: values.steps.map((st) => st.text) });
+    await save.mutateAsync({ id: recipeId, ...values });
     navigate({ to: "/recipes" });
   });
 
@@ -121,16 +118,6 @@ export function RecipeEditorPage() {
                   <FieldLabel htmlFor="name">Nome</FieldLabel>
                   <Input id="name" autoFocus={!recipeId} {...form.register("name")} />
                   <FieldError errors={[form.formState.errors.name]} />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="description">Descrizione</FieldLabel>
-                  <Controller
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <RichTextEditor id="description" value={field.value} onChange={field.onChange} onBlur={field.onBlur} minRows={5} />
-                    )}
-                  />
                 </Field>
                 <Field data-invalid={!!form.formState.errors.baseServings} className="max-w-40">
                   <FieldLabel htmlFor="baseServings">Persone (base)</FieldLabel>
@@ -192,19 +179,6 @@ export function RecipeEditorPage() {
                       render={({ field }) => <UnitSelect value={field.value} onChange={field.onChange} className="w-full" />}
                     />
                     <div className="flex">
-                      <Button type="button" variant="ghost" size="icon" disabled={i === 0} onClick={() => lines.move(i, i - 1)} aria-label="Sposta su">
-                        <ArrowUp />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        disabled={i === lines.fields.length - 1}
-                        onClick={() => lines.move(i, i + 1)}
-                        aria-label="Sposta giù"
-                      >
-                        <ArrowDown />
-                      </Button>
                       <Button type="button" variant="ghost" size="icon" onClick={() => lines.remove(i)} aria-label="Rimuovi">
                         <Trash2 />
                       </Button>
@@ -223,48 +197,25 @@ export function RecipeEditorPage() {
             </CardContent>
           </Card>
         </div>
-
-        <Card>
+        <Card className="col-span-1">
           <CardHeader>
             <CardTitle>Preparazione</CardTitle>
+            <CardDescription>Passaggi per la preparazione della ricetta.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {steps.fields.length === 0 && <p className="text-muted-foreground py-4 text-center text-sm">Nessun passo.</p>}
-            {steps.fields.map((step, i) => (
-              <div key={step.id} className="grid grid-cols-[1.5rem_minmax(0,1fr)_auto] items-start gap-2">
-                <span className="text-muted-foreground pt-2 text-right text-sm font-medium tabular-nums">{i + 1}.</span>
-                <Controller
-                  control={form.control}
-                  name={`steps.${i}.text`}
-                  render={({ field }) => (
-                    <RichTextEditor aria-label={`Passo ${i + 1}`} value={field.value} onChange={field.onChange} onBlur={field.onBlur} minRows={2} />
-                  )}
-                />
-                <div className="flex">
-                  <Button type="button" variant="ghost" size="icon" disabled={i === 0} onClick={() => steps.move(i, i - 1)} aria-label="Sposta su">
-                    <ArrowUp />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    disabled={i === steps.fields.length - 1}
-                    onClick={() => steps.move(i, i + 1)}
-                    aria-label="Sposta giù"
-                  >
-                    <ArrowDown />
-                  </Button>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => steps.remove(i)} aria-label="Rimuovi">
-                    <Trash2 />
-                  </Button>
-                </div>
-              </div>
-            ))}
-            <Button type="button" variant="outline" className="w-full" onClick={() => steps.append({ text: "" })}>
-              <Plus /> Aggiungi passo
-            </Button>
+          <CardContent>
+            <Field>
+              {/* <FieldLabel htmlFor="description">Descrizione</FieldLabel> */}
+              <Controller
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <RichTextEditor id="description" value={field.value} onChange={field.onChange} onBlur={field.onBlur} minRows={5} />
+                )}
+              />
+            </Field>
           </CardContent>
         </Card>
+
       </PageBody>
     </form>
   );
