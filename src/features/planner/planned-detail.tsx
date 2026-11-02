@@ -7,17 +7,18 @@ import { scalePlanned, type PlannedEntry } from "./api";
 /** Recipes of a planned meal with ingredient quantities scaled to its guests. */
 export function PlannedDetail({ entry }: { entry: PlannedEntry }) {
   const courses = scalePlanned(entry);
-  const coef = entry.meal.coefficient;
   return (
     <div className="space-y-5">
-      {coef !== 1 && (
-        <p className="text-muted-foreground text-sm">
-          Quantità ridotte con coefficiente <Badge variant="outline">×{formatNumber(coef)}</Badge>
-        </p>
-      )}
-      {courses.map(({ course, recipes }) => (
+      {courses.map(({ course, coefficient, recipes }) => (
         <section key={course} className="space-y-3">
-          <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{COURSE_LABELS[course]}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{COURSE_LABELS[course]}</h3>
+            {coefficient !== 1 && (
+              <Badge variant="outline" title="Coefficiente quantità">
+                ×{formatNumber(coefficient)}
+              </Badge>
+            )}
+          </div>
           {recipes.map((r) => (
             <div key={r.recipeId} className="rounded-lg border">
               <div className="flex items-baseline justify-between gap-2 border-b px-3 py-2">

@@ -23,16 +23,27 @@ const courses = z.object({
   dessert: z.array(z.string()),
 });
 
+const coefficient = z.number({ error: "Inserisci un numero" }).gt(0, "Deve essere maggiore di 0").max(10, "Massimo 10");
+const courseCoefficient = coefficient.nullable();
+
 const schema = z.object({
   name: z.string().trim().min(1, "Inserisci un nome"),
   notes: z.string(),
-  coefficient: z.number({ error: "Inserisci un numero" }).gt(0, "Deve essere maggiore di 0").max(10, "Massimo 10"),
+  coefficient,
+  /** null = same as the meal. */
+  courseCoefficients: z.object({ starter: courseCoefficient, first: courseCoefficient, main: courseCoefficient, dessert: courseCoefficient }),
   courses: courses.refine((c) => COURSES.some((k) => c[k].length > 0), "Aggiungi almeno una ricetta a una portata"),
 });
 
 type FormValues = z.infer<typeof schema>;
 
-const EMPTY: FormValues = { name: "", notes: "", coefficient: 1, courses: { starter: [], first: [], main: [], dessert: [] } };
+const EMPTY: FormValues = {
+  name: "",
+  notes: "",
+  coefficient: 1,
+  courseCoefficients: { starter: null, first: null, main: null, dessert: null },
+  courses: { starter: [], first: [], main: [], dessert: [] },
+};
 
 export function MealEditorPage() {
   const { mealId } = useParams({ strict: false });
@@ -48,8 +59,10 @@ export function MealEditorPage() {
   useEffect(() => {
     if (!meal) return form.reset(EMPTY);
     const byCourse = { ...EMPTY.courses };
+    const coefs = { ...EMPTY.courseCoefficients };
     for (const c of COURSES) byCourse[c] = meal.recipes.filter((r) => r.course === c).map((r) => r.recipeId);
-    form.reset({ name: meal.name, notes: meal.notes, coefficient: meal.coefficient, courses: byCourse });
+    for (const c of meal.courseCoefficients) coefs[c.course] = c.coefficient;
+    form.reset({ name: meal.name, notes: meal.notes, coefficient: meal.coefficient, courseCoefficients: coefs, courses: byCourse });
   }, [meal, form]);
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -80,6 +93,7 @@ export function MealEditorPage() {
   }
 
   const coursesError = form.formState.errors.courses;
+  const mealCoefficient = form.watch("coefficient");
 
   return (
     <form onSubmit={onSubmit} className="flex flex-1 flex-col">
@@ -111,7 +125,7 @@ export function MealEditorPage() {
               <Field data-invalid={!!form.formState.errors.coefficient} className="max-w-48">
                 <FieldLabel htmlFor="coefficient">Coefficiente quantità</FieldLabel>
                 <Input id="coefficient" type="number" step="0.05" min={0.05} {...form.register("coefficient", { valueAsNumber: true })} />
-                <FieldDescription>Es. 0,7 per ridurre le porzioni quando il pasto ha molte portate.</FieldDescription>
+                <FieldDescription>Es. 0,7 per ridurre le porzioni quando il pasto ha molte portate. Puoi cambiarlo per le singole portate.</FieldDescription>
                 <FieldError errors={[form.formState.errors.coefficient]} />
               </Field>
               <Field>
@@ -151,6 +165,32 @@ export function MealEditorPage() {
                         </Button>
                       </CardAction>
                     </CardHeader>
+                    <CardContent>
+                      <Controller
+                        control={form.control}
+                        name={`courseCoefficients.${course}`}
+                        render={({ field: coef, fieldState }) => (
+                          <Field orientation="horizontal" data-invalid={!!fieldState.error}>
+                            <FieldLabel htmlFor={`coef-${course}`} className="text-muted-foreground font-normal">
+                              Coefficiente
+                            </FieldLabel>
+                            <Input
+                              id={`coef-${course}`}
+                              type="number"
+                              step="0.05"
+                              min={0.05}
+                              className="w-24"
+                              placeholder={Number.isFinite(mealCoefficient) ? String(mealCoefficient) : ""}
+                              value={coef.value ?? ""}
+                              onChange={(e) => coef.onChange(e.target.value === "" ? null : e.target.valueAsNumber)}
+                              onBlur={coef.onBlur}
+                            />
+                            <FieldDescription className="text-xs">{coef.value == null ? "come il pasto" : ""}</FieldDescription>
+                            <FieldError errors={[fieldState.error]} />
+                          </Field>
+                        )}
+                      />
+                    </CardContent>
                     {ids.length > 0 && (
                       <CardContent className="space-y-1">
                         {ids.map((id, i) => (

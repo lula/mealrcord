@@ -90,6 +90,17 @@ export const mealRecipes = sqliteTable(
   (t) => [primaryKey({ columns: [t.mealId, t.recipeId, t.course] })],
 );
 
+/** Per-course override of the meal coefficient. No row = use the meal's. */
+export const mealCourseCoefficients = sqliteTable(
+  "meal_course_coefficients",
+  {
+    mealId: text("meal_id").notNull().references(() => meals.id),
+    course: text("course", { enum: COURSES }).notNull(),
+    coefficient: real("coefficient").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.mealId, t.course] })],
+);
+
 export const plannedMeals = sqliteTable("planned_meals", {
   id: text("id").primaryKey(),
   date: text("date").notNull(), // yyyy-MM-dd
@@ -135,7 +146,12 @@ export const recipeTagsRelations = relations(recipeTags, ({ one }) => ({
 
 export const mealsRelations = relations(meals, ({ many }) => ({
   recipes: many(mealRecipes),
+  courseCoefficients: many(mealCourseCoefficients),
   planned: many(plannedMeals),
+}));
+
+export const mealCourseCoefficientsRelations = relations(mealCourseCoefficients, ({ one }) => ({
+  meal: one(meals, { fields: [mealCourseCoefficients.mealId], references: [meals.id] }),
 }));
 
 export const mealRecipesRelations = relations(mealRecipes, ({ one }) => ({

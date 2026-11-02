@@ -225,7 +225,7 @@ function UnitsTab() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Simbolo</CardTitle>
+        <CardTitle>Unità di misura</CardTitle>
         <CardDescription>
           Peso e volume vengono convertiti e sommati nella lista della spesa (base: g e ml). Le unità «Altro» si sommano solo tra loro.
         </CardDescription>

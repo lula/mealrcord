@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Plus, Trash2, UtensilsCrossed } from "lucide-react";
+import { Edit2, Plus, Trash2, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { PageBody, PageHeader } from "@/components/page";
@@ -68,9 +68,21 @@ export function MealsPage() {
                     </Link>
                   </CardTitle>
                   <CardDescription>
-                    {m.coefficient !== 1 ? <Badge variant="outline">Coefficiente ×{formatNumber(m.coefficient)}</Badge> : m.notes || " "}
+                    {m.coefficient !== 1 || m.courseCoefficients.length > 0 ? (
+                      <Badge variant="outline">
+                        Coefficiente ×{formatNumber(m.coefficient)}
+                        {m.courseCoefficients.length > 0 && " (varia per portata)"}
+                      </Badge>
+                    ) : (
+                      m.notes || " "
+                    )}
                   </CardDescription>
                   <CardAction>
+                    <Button variant="ghost" size="icon" aria-label="Modifica" asChild>
+                      <Link to="/meals/$mealId" params={{ mealId: m.id }} className="hover:underline">
+                        <Edit2 />
+                      </Link>
+                    </Button>
                     <Button variant="ghost" size="icon" aria-label="Elimina" onClick={() => askDelete(m)}>
                       <Trash2 />
                     </Button>

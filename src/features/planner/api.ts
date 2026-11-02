@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { and, eq, gte, lte } from "drizzle-orm";
 import { db, newId } from "@/db/client";
 import { COURSES, plannedMeals, type Course } from "@/db/schema";
+import { courseCoefficient } from "@/features/meals/api";
 import { useDbMutation } from "@/lib/query";
 import { scaleFactor } from "@/lib/scaling";
 import type { QuantityLine } from "@/lib/units";
@@ -19,6 +20,7 @@ export async function fetchPlanned(from: string, to: string) {
     with: {
       meal: {
         with: {
+          courseCoefficients: true,
           recipes: {
             orderBy: (mr, { asc }) => [asc(mr.position)],
             with: {
@@ -55,13 +57,17 @@ export type ScaledRecipe = {
 };
 
 /** Recipes of a planned meal grouped by course, with quantities for its guests. */
-export function scalePlanned(entry: PlannedEntry): { course: Course; recipes: ScaledRecipe[] }[] {
+export function scalePlanned(entry: PlannedEntry): { course: Course; coefficient: number; recipes: ScaledRecipe[] }[] {
   return COURSES.map((course) => ({
     course,
+    coefficient: courseCoefficient(entry.meal, course),
+  })).map(({ course, coefficient }) => ({
+    course,
+    coefficient,
     recipes: entry.meal.recipes
       .filter((mr) => mr.course === course)
       .map(({ recipe }) => {
-        const factor = scaleFactor(entry.guests, recipe.baseServings, entry.meal.coefficient);
+        const factor = scaleFactor(entry.guests, recipe.baseServings, coefficient);
         return {
           recipeId: recipe.id,
           name: recipe.name,

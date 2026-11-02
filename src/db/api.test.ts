@@ -45,6 +45,7 @@ async function seed() {
     notes: "",
     coefficient: 0.8,
     courses: { starter: [], first: [pasta], main: [], dessert: [cake] },
+    courseCoefficients: { dessert: 0.5 },
   });
   return { flour, eggs, pasta, cake, meal };
 }
@@ -106,11 +107,14 @@ describe("data layer", () => {
     // Tagliatelle: 40 guests / 4 base * 0.8 = x8 -> 3200 g flour, 32 eggs
     expect(cena[0].recipes[0].factor).toBeCloseTo(8);
     expect(cena[0].recipes[0].lines.map((l) => l.quantity)).toEqual([3200, 32]);
+    // Torta uses its own course coefficient: 40 / 8 * 0.5 = x2.5
+    expect(cena.map((c) => c.coefficient)).toEqual([0.8, 0.5]);
+    expect(cena[1].recipes[0].factor).toBeCloseTo(2.5);
 
     const lines = aggregate(entries.flatMap((e) => plannerApi.scalePlanned(e).flatMap((c) => c.recipes.flatMap((r) => r.lines))));
-    // Flour: pasta (3200 + 1600 g) + cake (0.3 kg * 40/8*0.8 = 1.2 kg, 0.3 * 20/8*0.8 = 0.6 kg) = 6.6 kg
+    // Flour: pasta (3200 + 1600 g) + cake (0.3 kg * 40/8*0.5 = 0.75 kg, 0.3 * 20/8*0.5 = 0.375 kg) = 5.925 kg
     expect(lines.map((l) => [l.ingredientName, +l.quantity.toFixed(3), l.unit.symbol])).toEqual([
-      ["Farina", 6.6, "kg"],
+      ["Farina", 5.925, "kg"],
       ["Uova", 48, "pz"],
     ]);
   });

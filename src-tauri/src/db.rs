@@ -17,6 +17,7 @@ use tauri::State;
 const MIGRATIONS: &[&str] = &[
     include_str!("../migrations/001_init.sql"),
     include_str!("../migrations/002_recipe_steps.sql"),
+    include_str!("../migrations/003_meal_course_coefficients.sql"),
 ];
 
 pub struct Db {
