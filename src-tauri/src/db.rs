@@ -238,7 +238,8 @@ mod tests {
         let conn = mem();
         assert_eq!(schema_version(&conn).unwrap(), MIGRATIONS.len());
         let r = run_query(&conn, &q("SELECT count(*) FROM tags WHERE is_system = 1", vec![], Method::Get)).unwrap();
-        assert_eq!(r.rows, serde_json::json!([4]));
+        // Antipasto, Primo, Secondo, Dolce (001) + Contorno (011).
+        assert_eq!(r.rows, serde_json::json!([5]));
     }
 
     #[test]
