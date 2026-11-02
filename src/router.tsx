@@ -4,7 +4,10 @@ import { RecipesPage } from "@/features/recipes/recipes-page";
 import { RecipeEditorPage } from "@/features/recipes/recipe-editor-page";
 import { MealsPage } from "@/features/meals/meals-page";
 import { MealEditorPage } from "@/features/meals/meal-editor-page";
+import { DishesPage } from "@/features/dishes/dishes-page";
+import { DishEditorPage } from "@/features/dishes/dish-editor-page";
 import { PlannerPage, type PlannerSearch } from "@/features/planner/planner-page";
+import { PlannedEditorPage, type PlannedNewSearch } from "@/features/planner/planned-editor-page";
 import { ShoppingPage, type ShoppingSearch } from "@/features/shopping/shopping-page";
 import { SettingsPage } from "@/features/settings/settings-page";
 
@@ -29,6 +32,10 @@ const mealsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/meals"
 const mealNewRoute = createRoute({ getParentRoute: () => rootRoute, path: "/meals/new", component: MealEditorPage });
 export const mealEditRoute = createRoute({ getParentRoute: () => rootRoute, path: "/meals/$mealId", component: MealEditorPage });
 
+const dishesRoute = createRoute({ getParentRoute: () => rootRoute, path: "/dishes", component: DishesPage });
+const dishNewRoute = createRoute({ getParentRoute: () => rootRoute, path: "/dishes/new", component: DishEditorPage });
+export const dishEditRoute = createRoute({ getParentRoute: () => rootRoute, path: "/dishes/$dishId", component: DishEditorPage });
+
 export const plannerRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/planner",
@@ -36,8 +43,20 @@ export const plannerRoute = createRoute({
   validateSearch: (s: Record<string, unknown>): PlannerSearch => ({
     view: s.view === "month" || s.view === "day" ? s.view : undefined,
     date: asDate(s.date),
+    meal: typeof s.meal === "string" && s.meal ? s.meal : undefined,
   }),
 });
+
+const plannedNewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/planner/new",
+  component: PlannedEditorPage,
+  validateSearch: (s: Record<string, unknown>): PlannedNewSearch => ({
+    date: asDate(s.date),
+    meal: typeof s.meal === "string" && s.meal ? s.meal : undefined,
+  }),
+});
+export const plannedEditRoute = createRoute({ getParentRoute: () => rootRoute, path: "/planner/$plannedId", component: PlannedEditorPage });
 
 export const shoppingRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -56,7 +75,12 @@ const routeTree = rootRoute.addChildren([
   mealsRoute,
   mealNewRoute,
   mealEditRoute,
+  dishesRoute,
+  dishNewRoute,
+  dishEditRoute,
   plannerRoute,
+  plannedNewRoute,
+  plannedEditRoute,
   shoppingRoute,
   settingsRoute,
 ]);

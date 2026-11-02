@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/rich-text-editor";
 import { IngredientCombobox } from "@/features/ingredients/ingredient-combobox";
 import { TagPicker } from "@/features/tags/tag-picker";
 import { UnitSelect } from "@/features/units/unit-select";
@@ -120,7 +120,13 @@ export function RecipeEditorPage() {
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="description">Descrizione</FieldLabel>
-                  <Textarea id="description" rows={5} {...form.register("description")} />
+                  <Controller
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <RichTextEditor id="description" value={field.value} onChange={field.onChange} onBlur={field.onBlur} minRows={5} />
+                    )}
+                  />
                 </Field>
                 <Field data-invalid={!!form.formState.errors.baseServings} className="max-w-40">
                   <FieldLabel htmlFor="baseServings">Persone (base)</FieldLabel>
@@ -223,7 +229,13 @@ export function RecipeEditorPage() {
             {steps.fields.map((step, i) => (
               <div key={step.id} className="grid grid-cols-[1.5rem_minmax(0,1fr)_auto] items-start gap-2">
                 <span className="text-muted-foreground pt-2 text-right text-sm font-medium tabular-nums">{i + 1}.</span>
-                <Textarea rows={2} aria-label={`Passo ${i + 1}`} {...form.register(`steps.${i}.text`)} />
+                <Controller
+                  control={form.control}
+                  name={`steps.${i}.text`}
+                  render={({ field }) => (
+                    <RichTextEditor aria-label={`Passo ${i + 1}`} value={field.value} onChange={field.onChange} onBlur={field.onBlur} minRows={2} />
+                  )}
+                />
                 <div className="flex">
                   <Button type="button" variant="ghost" size="icon" disabled={i === 0} onClick={() => steps.move(i, i - 1)} aria-label="Sposta su">
                     <ArrowUp />

@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { RichText } from "@/components/rich-text";
 import { formatQuantity } from "@/lib/units";
 import { useRecipe } from "./api";
 
@@ -41,7 +42,7 @@ export function RecipeDetailDialog({ recipeId, onClose }: { recipeId: string | n
 
             <ScrollArea className="-mx-6 min-h-0 flex-1 px-6">
               <div className="space-y-5 pb-1">
-                {recipe.description && <p className="text-sm whitespace-pre-line">{recipe.description}</p>}
+                <RichText value={recipe.description} />
 
                 <section className="space-y-2">
                   <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">Ingredienti</h3>
@@ -66,8 +67,8 @@ export function RecipeDetailDialog({ recipeId, onClose }: { recipeId: string | n
                     <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">Preparazione</h3>
                     <ol className="list-decimal space-y-2 pl-5 text-sm">
                       {recipe.steps.map((st) => (
-                        <li key={st.position} className="whitespace-pre-line">
-                          {st.text}
+                        <li key={st.position}>
+                          <RichText value={st.text} />
                         </li>
                       ))}
                     </ol>

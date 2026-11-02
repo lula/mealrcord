@@ -17,5 +17,5 @@ export function PageHeader({ title, description, actions }: { title: ReactNode; 
 }
 
 export function PageBody({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <main className={`flex-1 py-2 pr-2 ${className}`}>{children}</main>;
+  return <main className={`flex-1 p-4 ${className}`}>{children}</main>;
 }

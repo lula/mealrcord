@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { eq } from "drizzle-orm";
 import { db, newId, nowIso } from "@/db/client";
-import { mealRecipes, meals, recipeIngredients, recipes, recipeSteps, recipeTags } from "@/db/schema";
+import { dishes, dishRecipes, mealRecipes, meals, recipeIngredients, recipes, recipeSteps, recipeTags } from "@/db/schema";
 import { useDbMutation } from "@/lib/query";
 
 export const useRecipes = () =>
@@ -75,6 +75,12 @@ export async function mealsUsingRecipe(recipeId: string) {
     .from(mealRecipes)
     .innerJoin(meals, eq(meals.id, mealRecipes.mealId))
     .where(eq(mealRecipes.recipeId, recipeId));
+  return rows.map((r) => r.name);
+}
+
+/** Names of the "piatti unici" that use a recipe. */
+export async function dishesUsingRecipe(recipeId: string) {
+  const rows = await db.select({ name: dishes.name }).from(dishRecipes).innerJoin(dishes, eq(dishes.id, dishRecipes.dishId)).where(eq(dishRecipes.recipeId, recipeId));
   return rows.map((r) => r.name);
 }
 

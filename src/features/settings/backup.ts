@@ -16,8 +16,14 @@ export async function exportJson(path: string) {
     recipeTags: await db.select().from(s.recipeTags),
     meals: await db.select().from(s.meals),
     mealRecipes: await db.select().from(s.mealRecipes),
+    dishes: await db.select().from(s.dishes),
+    dishRecipes: await db.select().from(s.dishRecipes),
+    mealDishes: await db.select().from(s.mealDishes),
     plannedMeals: await db.select().from(s.plannedMeals),
     plannedMealCourseCoefficients: await db.select().from(s.plannedMealCourseCoefficients),
+    plannedMealRecipeGuests: await db.select().from(s.plannedMealRecipeGuests),
+    plannedMealDishGuests: await db.select().from(s.plannedMealDishGuests),
+    settings: await db.select().from(s.settings),
   };
   await invoke("save_text_file", { path, contents: JSON.stringify(data, null, 2) });
 }

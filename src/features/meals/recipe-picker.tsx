@@ -17,6 +17,7 @@ export function RecipePicker({
   initialTagIds,
   selected,
   unavailable = {},
+  max,
   onConfirm,
 }: {
   open: boolean;
@@ -26,6 +27,8 @@ export function RecipePicker({
   selected: string[];
   /** Recipes that cannot be picked, with the reason shown (e.g. "Già nei primi"). */
   unavailable?: Record<string, string>;
+  /** Most recipes that can be picked. */
+  max?: number;
   onConfirm: (ids: string[]) => void;
 }) {
   const { data: recipes = [] } = useRecipes();
@@ -68,7 +71,8 @@ export function RecipePicker({
             {results.length === 0 && <p className="text-muted-foreground p-6 text-center text-sm">Nessuna ricetta trovata.</p>}
             {results.map((r) => {
               const on = picked.includes(r.id);
-              const reason = unavailable[r.id];
+              const full = max != null && picked.length >= max && !on;
+              const reason = unavailable[r.id] ?? (full ? `Massimo ${max} ricette` : undefined);
               return (
                 <button
                   key={r.id}

@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { usePlanned, scalePlanned } from "@/features/planner/api";
+import { plannedLines, usePlanned } from "@/features/planner/api";
 import { aggregate, formatQuantity } from "@/lib/units";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +30,7 @@ export function ShoppingPage() {
   const [draft, setDraft] = useState<DateRange | undefined>();
 
   const lines = useMemo(
-    () => aggregate(entries.flatMap((e) => scalePlanned(e).flatMap((c) => c.recipes.flatMap((r) => r.lines)))),
+    () => aggregate(entries.flatMap(plannedLines)),
     [entries],
   );
 

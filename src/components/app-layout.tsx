@@ -1,5 +1,6 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { BookOpen, CalendarDays, ChefHat, Moon, Settings, ShoppingCart, Sun, UtensilsCrossed } from "lucide-react";
+import { BookOpen, CalendarDays, ChefHat, CookingPot, Moon, Settings, ShoppingCart, Sun, UtensilsCrossed } from "lucide-react";
+import { useNavCounts } from "@/components/nav-counts";
 import { useTheme } from "@/components/theme";
 import {
   Sidebar,
@@ -10,15 +11,16 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarRail,
 } from "@/components/ui/sidebar";
 
 const NAV = [
   { to: "/planner", label: "Planner", icon: CalendarDays },
   { to: "/meals", label: "Menu", icon: UtensilsCrossed },
+  { to: "/dishes", label: "Piatti unici", icon: CookingPot },
   { to: "/recipes", label: "Ricette", icon: BookOpen },
   { to: "/shopping", label: "Lista della spesa", icon: ShoppingCart },
   { to: "/settings", label: "Impostazioni", icon: Settings },
@@ -28,6 +30,7 @@ export function AppLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { resolvedTheme, setTheme } = useTheme();
   const dark = resolvedTheme === "dark";
+  const { data: counts } = useNavCounts();
 
   return (
     <SidebarProvider>
@@ -58,6 +61,7 @@ export function AppLayout() {
                         <span>{label}</span>
                       </Link>
                     </SidebarMenuButton>
+                    {counts?.[to] != null && <SidebarMenuBadge>{counts[to]}</SidebarMenuBadge>}
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
@@ -74,7 +78,6 @@ export function AppLayout() {
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
-        <SidebarRail />
       </Sidebar>
       <SidebarInset>
         <Outlet />
