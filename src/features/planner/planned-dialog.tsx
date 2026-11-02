@@ -23,7 +23,7 @@ const courseCoefficient = coefficient.nullable();
 const schema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Scegli una data"),
   slot: z.string().trim().min(1, "Indica il servizio"),
-  mealId: z.string().min(1, "Scegli un pasto"),
+  mealId: z.string().min(1, "Scegli un menu"),
   guests: z.number({ error: "Inserisci un numero" }).int("Numero intero").min(1, "Almeno 1 coperto"),
   coefficient,
   /** null = same as the planned meal. */
@@ -98,7 +98,7 @@ export function PlannedDialog({
       <DialogContent className="sm:max-w-md">
         <form onSubmit={onSubmit} className="space-y-6">
           <DialogHeader>
-            <DialogTitle>{entry ? "Modifica pianificazione" : "Pianifica pasto"}</DialogTitle>
+            <DialogTitle>{entry ? "Modifica pianificazione" : "Pianifica menu"}</DialogTitle>
           </DialogHeader>
           <FieldGroup>
             <Field data-invalid={!!errors.date}>
@@ -151,14 +151,14 @@ export function PlannedDialog({
               <FieldError errors={[errors.slot]} />
             </Field>
             <Field data-invalid={!!errors.mealId}>
-              <FieldLabel>Pasto</FieldLabel>
+              <FieldLabel>Menu</FieldLabel>
               <Controller
                 control={form.control}
                 name="mealId"
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder={meals.length ? "Scegli un pasto" : "Crea prima un pasto"} />
+                      <SelectValue placeholder={meals.length ? "Scegli un menu" : "Crea prima un menu"} />
                     </SelectTrigger>
                     <SelectContent>
                       {meals.map((m) => (

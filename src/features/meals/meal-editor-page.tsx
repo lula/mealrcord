@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { COURSES, type Course } from "@/db/schema";
 import { useRecipes } from "@/features/recipes/api";
+import { RecipeDetailDialog } from "@/features/recipes/recipe-detail-dialog";
 import { RecipePicker } from "./recipe-picker";
 import { COURSE_LABELS, COURSE_TAG_ID, useMeal, useSaveMeal } from "./api";
 
@@ -40,6 +41,7 @@ export function MealEditorPage() {
   const save = useSaveMeal();
   const navigate = useNavigate();
   const [picking, setPicking] = useState<Course | null>(null);
+  const [viewing, setViewing] = useState<string | null>(null);
 
   const recipeNames = useMemo(() => new Map(recipes.map((r) => [r.id, r.name])), [recipes]);
   const form = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: EMPTY });
@@ -66,11 +68,11 @@ export function MealEditorPage() {
   if (mealId && !meal) {
     return (
       <>
-        <PageHeader title="Pasto non trovato" />
+        <PageHeader title="Menu non trovato" />
         <PageBody>
           <Button asChild variant="outline">
             <Link to="/meals">
-              <ArrowLeft /> Torna ai pasti
+              <ArrowLeft /> Torna ai menu
             </Link>
           </Button>
         </PageBody>
@@ -83,7 +85,7 @@ export function MealEditorPage() {
   return (
     <form onSubmit={onSubmit} className="flex flex-1 flex-col">
       <PageHeader
-        title={meal ? meal.name : "Nuovo pasto"}
+        title={meal ? meal.name : "Nuovo menu"}
         actions={
           <>
             <Button variant="outline" asChild>
@@ -148,7 +150,13 @@ export function MealEditorPage() {
                       <CardContent className="space-y-1">
                         {ids.map((id, i) => (
                           <div key={id} className="bg-muted/50 flex items-center gap-1 rounded-md py-1 pr-1 pl-3 text-sm">
-                            <span className="flex-1 truncate">{recipeNames.get(id) ?? "…"}</span>
+                            <button
+                              type="button"
+                              className="hover:text-primary flex-1 cursor-pointer truncate text-left hover:underline"
+                              onClick={() => setViewing(id)}
+                            >
+                              {recipeNames.get(id) ?? "…"}
+                            </button>
                             <Button type="button" variant="ghost" size="icon-sm" disabled={i === 0} onClick={() => move(i, i - 1)} aria-label="Sposta su">
                               <ArrowUp />
                             </Button>
@@ -175,6 +183,11 @@ export function MealEditorPage() {
                       title={`Ricette: ${COURSE_LABELS[course]}`}
                       initialTagIds={[COURSE_TAG_ID[course]]}
                       selected={ids}
+                      unavailable={Object.fromEntries(
+                        COURSES.filter((c) => c !== course).flatMap((c) =>
+                          form.getValues(`courses.${c}`).map((id) => [id, `Già in ${COURSE_LABELS[c].toLowerCase()}`]),
+                        ),
+                      )}
                       onConfirm={(next) => {
                         field.onChange(next);
                         form.clearErrors("courses");
@@ -187,6 +200,7 @@ export function MealEditorPage() {
           ))}
         </div>
       </PageBody>
+      <RecipeDetailDialog recipeId={viewing} onClose={() => setViewing(null)} />
     </form>
   );
 }

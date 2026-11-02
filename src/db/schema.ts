@@ -1,6 +1,6 @@
 // Mirrors src-tauri/migrations/*.sql. Keep the two in sync.
 import { relations } from "drizzle-orm";
-import { integer, primaryKey, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, primaryKey, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const COURSES = ["starter", "first", "main", "dessert"] as const;
 export type Course = (typeof COURSES)[number];
@@ -86,7 +86,8 @@ export const mealRecipes = sqliteTable(
     course: text("course", { enum: COURSES }).notNull(),
     position: integer("position").notNull().default(0),
   },
-  (t) => [primaryKey({ columns: [t.mealId, t.recipeId, t.course] })],
+  // A recipe appears once per menu.
+  (t) => [primaryKey({ columns: [t.mealId, t.recipeId, t.course] }), uniqueIndex("meal_recipes_unique").on(t.mealId, t.recipeId)],
 );
 
 export const plannedMeals = sqliteTable("planned_meals", {

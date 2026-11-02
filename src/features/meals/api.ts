@@ -50,6 +50,8 @@ export type MealInput = {
 export async function saveMeal(input: MealInput): Promise<string> {
   const total = COURSES.reduce((n, c) => n + input.courses[c].length, 0);
   if (total === 0) throw new Error("Aggiungi almeno una ricetta a una portata");
+  const all = COURSES.flatMap((c) => input.courses[c]);
+  if (new Set(all).size !== all.length) throw new Error("Una ricetta può comparire una sola volta nel menu");
 
   const id = input.id ?? newId();
   const now = nowIso();
@@ -68,7 +70,7 @@ export async function saveMeal(input: MealInput): Promise<string> {
   return id;
 }
 
-export const useSaveMeal = () => useDbMutation(saveMeal, { success: "Pasto salvato" });
+export const useSaveMeal = () => useDbMutation(saveMeal, { success: "Menu salvato" });
 
 export async function plannedUsageCount(mealId: string) {
   const [row] = await db.select({ n: count() }).from(plannedMeals).where(eq(plannedMeals.mealId, mealId));
@@ -76,4 +78,4 @@ export async function plannedUsageCount(mealId: string) {
 }
 
 export const useDeleteMeal = () =>
-  useDbMutation((id: string) => db.delete(meals).where(eq(meals.id, id)).run(), { success: "Pasto eliminato" });
+  useDbMutation((id: string) => db.delete(meals).where(eq(meals.id, id)).run(), { success: "Menu eliminato" });

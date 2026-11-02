@@ -16,6 +16,7 @@ export function RecipePicker({
   title,
   initialTagIds,
   selected,
+  unavailable = {},
   onConfirm,
 }: {
   open: boolean;
@@ -23,6 +24,8 @@ export function RecipePicker({
   title: string;
   initialTagIds: string[];
   selected: string[];
+  /** Recipes that cannot be picked, with the reason shown (e.g. "Già nei primi"). */
+  unavailable?: Record<string, string>;
   onConfirm: (ids: string[]) => void;
 }) {
   const { data: recipes = [] } = useRecipes();
@@ -65,17 +68,22 @@ export function RecipePicker({
             {results.length === 0 && <p className="text-muted-foreground p-6 text-center text-sm">Nessuna ricetta trovata.</p>}
             {results.map((r) => {
               const on = picked.includes(r.id);
+              const reason = unavailable[r.id];
               return (
                 <button
                   key={r.id}
                   type="button"
+                  disabled={!!reason}
                   onClick={() => toggle(r.id)}
-                  className={cn("hover:bg-accent flex w-full items-center gap-3 rounded-md px-3 py-2 text-left", on && "bg-accent/60")}
+                  className={cn(
+                    "hover:bg-accent flex w-full items-center gap-3 rounded-md px-3 py-2 text-left disabled:pointer-events-none disabled:opacity-50",
+                    on && "bg-accent/60",
+                  )}
                 >
                   <Check className={cn("size-4 shrink-0", on ? "opacity-100" : "opacity-0")} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium">{r.name}</span>
-                    <span className="text-muted-foreground text-xs">{r.baseServings} persone</span>
+                    <span className="text-muted-foreground text-xs">{reason ?? `${r.baseServings} persone`}</span>
                   </span>
                   <TagBadges tags={r.tags.map((t) => t.tag)} />
                 </button>

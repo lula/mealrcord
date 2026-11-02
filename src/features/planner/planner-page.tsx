@@ -181,7 +181,7 @@ function EntryActions({ entry, onEdit, onDeleted }: { entry: PlannedEntry; onEdi
           </Button>
         }
         title="Rimuovere dal planner?"
-        description={`${entry.slot} · ${entry.meal.name}. Il pasto resta disponibile.`}
+        description={`${entry.slot} · ${entry.meal.name}. Il menu resta disponibile.`}
         confirmLabel="Rimuovi"
         onConfirm={() => del.mutate(entry.id, { onSuccess: onDeleted })}
       />
@@ -319,8 +319,8 @@ function DayView({ entries, onAdd, onEdit }: { entries: PlannedEntry[]; onAdd: (
     return (
       <Empty className="border">
         <EmptyHeader>
-          <EmptyTitle>Nessun pasto pianificato</EmptyTitle>
-          <EmptyDescription>Aggiungi un pasto con il numero di coperti previsti: le quantità verranno calcolate in automatico.</EmptyDescription>
+          <EmptyTitle>Nessun menu pianificato</EmptyTitle>
+          <EmptyDescription>Aggiungi un menu con il numero di coperti previsti: le quantità verranno calcolate in automatico.</EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
           <Button onClick={onAdd}>
@@ -355,7 +355,7 @@ function DayView({ entries, onAdd, onEdit }: { entries: PlannedEntry[]; onAdd: (
         </Card>
       ))}
       <Button variant="outline" className="h-auto min-h-20 border-dashed xl:col-span-2" onClick={onAdd}>
-        <Plus /> Aggiungi un altro pasto
+        <Plus /> Aggiungi un altro menu
       </Button>
     </div>
   );

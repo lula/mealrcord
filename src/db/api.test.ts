@@ -10,7 +10,7 @@ const { saveRecipe, getRecipe, mealsUsingRecipe } = await import("@/features/rec
 const { createIngredient } = await import("@/features/ingredients/api");
 const { saveMeal, plannedUsageCount } = await import("@/features/meals/api");
 const { db } = await import("./client");
-const { plannedMeals } = await import("./schema");
+const { mealRecipes, plannedMeals } = await import("./schema");
 const { aggregate } = await import("@/lib/units");
 const plannerApi = await import("@/features/planner/api");
 
@@ -77,8 +77,12 @@ describe("data layer", () => {
     expect((await getRecipe(pasta))?.name).toBe("Tagliatelle");
   });
 
-  it("rejects a meal with no recipes", async () => {
+  it("rejects a meal with no recipes or a repeated recipe", async () => {
+    const { pasta, meal } = await seed();
     await expect(saveMeal({ name: "Vuoto", notes: "", courses: { starter: [], first: [], main: [], dessert: [] } })).rejects.toThrow(/almeno una ricetta/);
+    await expect(saveMeal({ name: "Doppio", notes: "", courses: { starter: [], first: [pasta], main: [pasta], dessert: [] } })).rejects.toThrow(/una sola volta/);
+    // The database enforces it too.
+    await expect(db.batch([db.insert(mealRecipes).values({ mealId: meal, recipeId: pasta, course: "main" })])).rejects.toThrow(/UNIQUE/);
   });
 
   it("reports where recipes and meals are used", async () => {

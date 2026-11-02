@@ -18,7 +18,7 @@ import {
 
 const NAV = [
   { to: "/planner", label: "Planner", icon: CalendarDays },
-  { to: "/meals", label: "Pasti", icon: UtensilsCrossed },
+  { to: "/meals", label: "Menu", icon: UtensilsCrossed },
   { to: "/recipes", label: "Ricette", icon: BookOpen },
   { to: "/shopping", label: "Lista della spesa", icon: ShoppingCart },
   { to: "/settings", label: "Impostazioni", icon: Settings },

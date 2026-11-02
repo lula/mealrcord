@@ -50,7 +50,7 @@ export function ShoppingPage() {
     <>
       <PageHeader
         title="Lista della spesa"
-        description={`${entries.length} pasti pianificati nel periodo`}
+        description={`${entries.length} menu pianificati nel periodo`}
         actions={
           <>
             <Button
@@ -122,7 +122,7 @@ export function ShoppingPage() {
                 <ShoppingCart />
               </EmptyMedia>
               <EmptyTitle>Niente da comprare</EmptyTitle>
-              <EmptyDescription>Non ci sono pasti pianificati con ingredienti in questo periodo.</EmptyDescription>
+              <EmptyDescription>Non ci sono menu pianificati con ingredienti in questo periodo.</EmptyDescription>
             </EmptyHeader>
           </Empty>
         ) : (

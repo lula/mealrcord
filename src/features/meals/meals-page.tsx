@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Edit2, Plus, Trash2, UtensilsCrossed } from "lucide-react";
+import { Pencil, Plus, Trash2, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { PageBody, PageHeader } from "@/components/page";
@@ -8,12 +8,14 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { COURSES } from "@/db/schema";
+import { RecipeDetailDialog } from "@/features/recipes/recipe-detail-dialog";
 import { COURSE_LABELS, plannedUsageCount, useDeleteMeal, useMeals, type MealListItem } from "./api";
 
 export function MealsPage() {
   const { data: meals, isLoading } = useMeals();
   const del = useDeleteMeal();
   const [toDelete, setToDelete] = useState<MealListItem | null>(null);
+  const [viewing, setViewing] = useState<string | null>(null);
 
   async function askDelete(m: MealListItem) {
     const n = await plannedUsageCount(m.id);
@@ -27,12 +29,12 @@ export function MealsPage() {
   return (
     <>
       <PageHeader
-        title="Pasti"
-        description={meals && `${meals.length} pasti`}
+        title="Menu"
+        description={meals && `${meals.length} menu`}
         actions={
           <Button asChild>
             <Link to="/meals/new">
-              <Plus /> Nuovo pasto
+              <Plus /> Nuovo menu
             </Link>
           </Button>
         }
@@ -44,13 +46,13 @@ export function MealsPage() {
               <EmptyMedia variant="icon">
                 <UtensilsCrossed />
               </EmptyMedia>
-              <EmptyTitle>Nessun pasto</EmptyTitle>
-              <EmptyDescription>Un pasto raggruppa ricette in antipasti, primi, secondi e dolci.</EmptyDescription>
+              <EmptyTitle>Nessun menu</EmptyTitle>
+              <EmptyDescription>Un menu raggruppa ricette in antipasti, primi, secondi e dolci.</EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
               <Button asChild>
                 <Link to="/meals/new">
-                  <Plus /> Nuovo pasto
+                  <Plus /> Nuovo menu
                 </Link>
               </Button>
             </EmptyContent>
@@ -69,9 +71,9 @@ export function MealsPage() {
                     {m.notes || " "}
                   </CardDescription>
                   <CardAction>
-                    <Button variant="ghost" size="icon" aria-label="Elimina" asChild>
+                    <Button variant="ghost" size="icon" aria-label="Modifica" asChild>
                       <Link to="/meals/$mealId" params={{ mealId: m.id }} className="hover:underline">
-                        <Edit2 />
+                        <Pencil />
                       </Link>
                     </Button>
                     <Button variant="ghost" size="icon" aria-label="Elimina" onClick={() => askDelete(m)}>
@@ -86,7 +88,16 @@ export function MealsPage() {
                     return (
                       <div key={c}>
                         <div className="text-muted-foreground text-xs font-medium uppercase">{COURSE_LABELS[c]}</div>
-                        <div>{items.map((r) => r.recipe.name).join(" · ")}</div>
+                        <div>
+                          {items.map((r, i) => (
+                            <span key={r.recipeId}>
+                              {i > 0 && " · "}
+                              <button type="button" className="hover:text-primary cursor-pointer hover:underline" onClick={() => setViewing(r.recipeId)}>
+                                {r.recipe.name}
+                              </button>
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     );
                   })}
@@ -97,11 +108,13 @@ export function MealsPage() {
         )}
       </PageBody>
 
+      <RecipeDetailDialog recipeId={viewing} onClose={() => setViewing(null)} />
+
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminare «{toDelete?.name}»?</AlertDialogTitle>
-            <AlertDialogDescription>Le ricette del pasto non verranno eliminate.</AlertDialogDescription>
+            <AlertDialogDescription>Le ricette del menu non verranno eliminate.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annulla</AlertDialogCancel>

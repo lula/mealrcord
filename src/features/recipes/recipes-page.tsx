@@ -26,7 +26,7 @@ export function RecipesPage() {
   async function askDelete(r: RecipeListItem) {
     const usedIn = await mealsUsingRecipe(r.id);
     if (usedIn.length) {
-      toast.error(`«${r.name}» è usata nei pasti: ${usedIn.join(", ")}. Rimuovila prima da lì.`);
+      toast.error(`«${r.name}» è usata nei menu: ${usedIn.join(", ")}. Rimuovila prima da lì.`);
       return;
     }
     setToDelete(r);
