@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="824" height="824" viewBox="100 100 824 824">
+  <!-- App icon cropped to the tile (no macOS margins), for the sidebar. Source: src-tauri/icons/app-icon.svg -->
+  <defs>
+    <!-- Sage green, from the app's primary color (oklch 0.52 0.065 150 = #4d7455) and a lighter tint. -->
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6f9676" />
+      <stop offset="1" stop-color="#4d7455" />
+    </linearGradient>
+  </defs>
+
+  <!-- macOS-style tile: 824px with transparent margins, rounded corners. -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)" />
+
+  <!-- White chef hat (toque). -->
+  <g fill="#ffffff">
+    <!-- Puffy top -->
+    <circle cx="372" cy="452" r="118" />
+    <circle cx="512" cy="380" r="150" />
+    <circle cx="652" cy="452" r="118" />
+    <!-- Body, slightly tapered -->
+    <path d="M 380 470 L 402 662 L 622 662 L 644 470 Z" />
+    <!-- Band -->
+    <rect x="388" y="686" width="248" height="92" rx="24" />
+  </g>
+
+  <!-- Pleats on the body -->
+  <g stroke="#4d7455" stroke-width="14" stroke-linecap="round" opacity="0.35">
+    <line x1="462" y1="560" x2="466" y2="636" />
+    <line x1="512" y1="550" x2="512" y2="636" />
+    <line x1="562" y1="560" x2="558" y2="636" />
+  </g>
+</svg>
