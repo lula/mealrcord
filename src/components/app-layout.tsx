@@ -13,6 +13,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  SidebarRail,
 } from "@/components/ui/sidebar";
 
 const NAV = [
@@ -30,7 +31,7 @@ export function AppLayout() {
 
   return (
     <SidebarProvider>
-      <Sidebar collapsible="icon">
+      <Sidebar variant="floating" collapsible="icon">
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
@@ -39,7 +40,7 @@ export function AppLayout() {
                   <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-md">
                     <ChefHat className="size-4" />
                   </div>
-                  <span className="font-semibold">mealrcord</span>
+                  <span className="font-semibold group-data-[collapsible=icon]:hidden">mealrcord</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -73,6 +74,7 @@ export function AppLayout() {
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
+        <SidebarRail />
       </Sidebar>
       <SidebarInset>
         <Outlet />
