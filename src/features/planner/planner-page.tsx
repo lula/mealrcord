@@ -155,7 +155,7 @@ export function PlannerPage() {
                 {selected.notes && <p className="text-muted-foreground mb-4 text-sm">{selected.notes}</p>}
                 <PlannedDetail entry={selected} />
               </div>
-              <SheetFooter className="flex-row">
+              <SheetFooter className="flex-col">
                 <EntryActions entry={selected} onEdit={() => setDialog({ entry: selected })} onDeleted={() => setSelectedId(null)} />
               </SheetFooter>
             </>
@@ -170,12 +170,12 @@ function EntryActions({ entry, onEdit, onDeleted }: { entry: PlannedEntry; onEdi
   const del = useDeletePlanned();
   return (
     <>
-      <Button variant="outline" size="sm" onClick={onEdit}>
+      <Button variant="outline" onClick={onEdit}>
         <Pencil /> Modifica
       </Button>
       <ConfirmDialog
         trigger={
-          <Button variant="ghost" size="sm">
+          <Button variant="destructive">
             <Trash2 /> Rimuovi
           </Button>
         }
