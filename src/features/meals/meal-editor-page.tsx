@@ -3,7 +3,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { ArrowDown, ArrowLeft, ArrowUp, Copy, Lock, Plus, X } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, Copy, Lock, Plus, RotateCcw, Save, X } from "lucide-react";
 import { PageBody, PageHeader } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -88,7 +88,7 @@ export function MealEditorPage() {
       <>
         <PageHeader title="Menu non trovato" />
         <PageBody>
-          <Button asChild variant="outline">
+          <Button type="button" asChild variant="outline">
             <Link to="/meals">
               <ArrowLeft /> Torna ai menu
             </Link>
@@ -102,7 +102,7 @@ export function MealEditorPage() {
   const locked = !!meal && meal.planned.length > 0;
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-1 flex-col">
+    <form onSubmit={(e) => e.preventDefault()} className="flex flex-1 flex-col">
       <PageHeader
         title={meal ? meal.name : "Nuovo menu"}
         actions={
@@ -112,16 +112,20 @@ export function MealEditorPage() {
                 <Button type="button" variant="outline" disabled={duplicate.isPending} onClick={onDuplicate}>
                   <Copy /> Duplica
                 </Button>
-                <Button asChild>
+                <Button type="button" asChild>
                   <Link to="/meals">Chiudi</Link>
                 </Button>
               </>
             ) : (
               <>
-                <Button variant="outline" asChild>
-                  <Link to="/meals">Annulla</Link>
+                <Button type="button" variant="outline" asChild>
+                  <Link to="/meals">
+                    <RotateCcw />
+                    Annulla
+                  </Link>
                 </Button>
-                <Button type="submit" disabled={save.isPending}>
+                <Button type="button" disabled={save.isPending} onClick={onSubmit}>
+                  <Save />
                   Salva
                 </Button>
               </>
@@ -211,22 +215,22 @@ export function MealEditorPage() {
                             </button>
                             {!locked && (
                               <>
-                            <Button type="button" variant="ghost" size="icon-sm" disabled={i === 0} onClick={() => move(i, i - 1)} aria-label="Sposta su">
-                              <ArrowUp />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon-sm"
-                              disabled={i === ids.length - 1}
-                              onClick={() => move(i, i + 1)}
-                              aria-label="Sposta giù"
-                            >
-                              <ArrowDown />
-                            </Button>
-                            <Button type="button" variant="ghost" size="icon-sm" onClick={() => field.onChange(ids.filter((x) => x !== id))} aria-label="Rimuovi">
-                              <X />
-                            </Button>
+                                <Button type="button" variant="ghost" size="icon-sm" disabled={i === 0} onClick={() => move(i, i - 1)} aria-label="Sposta su">
+                                  <ArrowUp />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  disabled={i === ids.length - 1}
+                                  onClick={() => move(i, i + 1)}
+                                  aria-label="Sposta giù"
+                                >
+                                  <ArrowDown />
+                                </Button>
+                                <Button type="button" variant="ghost" size="icon-sm" onClick={() => field.onChange(ids.filter((x) => x !== id))} aria-label="Rimuovi">
+                                  <X />
+                                </Button>
                               </>
                             )}
                           </div>

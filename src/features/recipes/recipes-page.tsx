@@ -23,6 +23,7 @@ import {
 import { toPlainText } from "@/lib/rich-text";
 import { TagBadges, TagPicker } from "@/features/tags/tag-picker";
 import { dishesUsingRecipe, mealsUsingRecipe, useDeleteRecipe, useDuplicateRecipe, useRecipes, type RecipeListItem } from "./api";
+import { format } from "date-fns";
 
 const PAGE_SIZE = 20;
 
@@ -150,9 +151,12 @@ export function RecipesPage() {
                       </CardAction>
                     </CardHeader>
                     <CardContent className="mt-auto flex flex-wrap items-center gap-2 text-sm">
-                      <Badge variant="secondary">
-                        <Users /> {r.baseServings} persone
+                      <Badge variant="outline">
+                        {format(r.createdAt, 'dd/MM/yyyy')}
                       </Badge>
+                      {/* <Badge variant="secondary">
+                        <Users /> {r.baseServings} persone
+                      </Badge> */}
                       <TagBadges tags={r.tags.map((t) => t.tag)} />
                     </CardContent>
                   </Card>

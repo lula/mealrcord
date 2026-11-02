@@ -268,7 +268,7 @@ export function PlannedEditorPage() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-1 flex-col">
+    <form onSubmit={(e) => e.preventDefault()} className="flex flex-1 flex-col">
       <PageHeader
         title={entry ? "Modifica pianificazione" : "Pianifica menu"}
         actions={
@@ -276,7 +276,7 @@ export function PlannedEditorPage() {
             <Button type="button" variant="outline" onClick={() => close()}>
               Annulla
             </Button>
-            <Button type="submit" disabled={save.isPending}>
+            <Button type="button" disabled={save.isPending} onClick={onSubmit}>
               Salva
             </Button>
           </>

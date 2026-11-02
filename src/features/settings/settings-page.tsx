@@ -129,12 +129,7 @@ function IngredientDialog({ value, onClose }: { value: { id: string; name: strin
       <DialogContent className="sm:max-w-sm">
         <form
           className="space-y-6"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (!draft?.name.trim()) return;
-            await update.mutateAsync(draft);
-            onClose();
-          }}
+          onSubmit={(e) => e.preventDefault()}
         >
           <DialogHeader>
             <DialogTitle>Modifica ingrediente</DialogTitle>
@@ -155,7 +150,15 @@ function IngredientDialog({ value, onClose }: { value: { id: string; name: strin
             <Button type="button" variant="outline" onClick={onClose}>
               Annulla
             </Button>
-            <Button type="submit" disabled={update.isPending}>
+            <Button
+              type="button"
+              disabled={update.isPending}
+              onClick={async () => {
+                if (!draft?.name.trim()) return;
+                await update.mutateAsync(draft);
+                onClose();
+              }}
+            >
               Salva
             </Button>
           </DialogFooter>
@@ -180,15 +183,18 @@ function TagsTab() {
       <CardContent className="space-y-4">
         <form
           className="flex max-w-sm gap-2"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (!name.trim()) return;
-            await create.mutateAsync(name);
-            setName("");
-          }}
+          onSubmit={(e) => e.preventDefault()}
         >
           <Input placeholder="Nuovo tag (es. Vegetariano)" value={name} onChange={(e) => setName(e.target.value)} />
-          <Button type="submit" disabled={!name.trim()}>
+          <Button
+            type="button"
+            disabled={!name.trim()}
+            onClick={async () => {
+              if (!name.trim()) return;
+              await create.mutateAsync(name);
+              setName("");
+            }}
+          >
             <Plus /> Aggiungi
           </Button>
         </form>
@@ -278,12 +284,7 @@ function UnitsTab() {
       <CardFooter>
         <form
           className="flex flex-wrap items-end gap-2"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (!draft.symbol.trim() || !draft.name.trim() || !(draft.factorToBase > 0)) return;
-            await create.mutateAsync({ ...draft, symbol: draft.symbol.trim(), name: draft.name.trim() });
-            setDraft({ name: "", symbol: "", dimension: "other", factorToBase: 1 });
-          }}
+          onSubmit={(e) => e.preventDefault()}
         >
           <Field className="w-28">
             <FieldLabel htmlFor="u-symbol">Simbolo</FieldLabel>
@@ -321,7 +322,15 @@ function UnitsTab() {
               />
             </Field>
           )}
-          <Button type="submit" disabled={!draft.symbol.trim() || !draft.name.trim()}>
+          <Button
+            type="button"
+            disabled={!draft.symbol.trim() || !draft.name.trim()}
+            onClick={async () => {
+              if (!draft.symbol.trim() || !draft.name.trim() || !(draft.factorToBase > 0)) return;
+              await create.mutateAsync({ ...draft, symbol: draft.symbol.trim(), name: draft.name.trim() });
+              setDraft({ name: "", symbol: "", dimension: "other", factorToBase: 1 });
+            }}
+          >
             <Plus /> Aggiungi unità
           </Button>
         </form>
@@ -396,19 +405,22 @@ function NumberSettingCard({
       <CardContent>
         <form
           className="space-y-4"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (!valid) return;
-            await save.mutateAsync({ key: settingKey, value: parsed });
-            setDraft(null);
-          }}
+          onSubmit={(e) => e.preventDefault()}
         >
           <Field>
             <FieldLabel htmlFor={id}>{label}</FieldLabel>
             <Input id={id} type="number" min={min} step={step} className="w-32" value={value} onChange={(e) => setDraft(e.target.value)} />
             <FieldDescription>{help}</FieldDescription>
           </Field>
-          <Button type="submit" disabled={!valid || parsed === current || save.isPending}>
+          <Button
+            type="button"
+            disabled={!valid || parsed === current || save.isPending}
+            onClick={async () => {
+              if (!valid) return;
+              await save.mutateAsync({ key: settingKey, value: parsed });
+              setDraft(null);
+            }}
+          >
             Salva
           </Button>
         </form>

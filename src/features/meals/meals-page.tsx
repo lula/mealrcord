@@ -86,7 +86,7 @@ export function MealsPage() {
               <EmptyDescription>Un menu raggruppa ricette in antipasti, primi, secondi e dolci.</EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
-              <Button asChild>
+              <Button type="button" asChild>
                 <Link to="/meals/new">
                   <Plus /> Nuovo menu
                 </Link>
@@ -117,7 +117,7 @@ export function MealsPage() {
                 <ToggleGroupItem value="unplanned">Non pianificati</ToggleGroupItem>
               </ToggleGroup>
               {filtering && (
-                <Button variant="outline" onClick={resetFilters}>
+                <Button type="button" variant="outline" onClick={resetFilters}>
                   <X /> Rimuovi filtri
                 </Button>
               )}
@@ -129,7 +129,7 @@ export function MealsPage() {
                   <EmptyDescription>Nessun menu corrisponde ai filtri.</EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent>
-                  <Button variant="outline" onClick={resetFilters}>
+                  <Button type="button" variant="outline" onClick={resetFilters}>
                     <X /> Rimuovi filtri
                   </Button>
                 </EmptyContent>
@@ -156,13 +156,13 @@ export function MealsPage() {
                     </CardDescription>
                     <CardAction>
                       {m.planned.length > 0 ? (
-                        <Button variant="ghost" size="icon" aria-label="Visualizza" title="Nel planner: sola lettura" asChild>
+                        <Button type="button" variant="ghost" size="icon" aria-label="Visualizza" title="Nel planner: sola lettura" asChild>
                           <Link to="/meals/$mealId" params={{ mealId: m.id }}>
                             <Lock />
                           </Link>
                         </Button>
                       ) : (
-                        <Button variant="ghost" size="icon" aria-label="Modifica" title="Modifica" asChild>
+                        <Button type="button" variant="ghost" size="icon" aria-label="Modifica" title="Modifica" asChild>
                           <Link to="/meals/$mealId" params={{ mealId: m.id }}>
                             <Pencil />
                           </Link>
@@ -170,7 +170,7 @@ export function MealsPage() {
                       )}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" aria-label="Altre azioni">
+                          <Button type="button" variant="ghost" size="icon" aria-label="Altre azioni">
                             <EllipsisVertical />
                           </Button>
                         </DropdownMenuTrigger>

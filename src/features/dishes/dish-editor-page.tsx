@@ -3,7 +3,7 @@ import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { ArrowDown, ArrowLeft, ArrowUp, Plus, X } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, Plus, RotateCcw, Save, X } from "lucide-react";
 import { PageBody, PageHeader } from "@/components/page";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { Button } from "@/components/ui/button";
@@ -118,15 +118,19 @@ export function DishEditorPage() {
   const recipesError = form.formState.errors.recipes;
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-1 flex-col">
+    <form onSubmit={(e) => e.preventDefault()} className="flex flex-1 flex-col">
       <PageHeader
         title={dish ? dish.name : "Nuovo piatto unico"}
         actions={
           <>
-            <Button variant="outline" asChild>
-              <Link to="/dishes">Annulla</Link>
+            <Button type="button" variant="outline" asChild>
+              <Link to="/dishes">
+                <RotateCcw />
+                Annulla
+              </Link>
             </Button>
-            <Button type="submit" disabled={save.isPending}>
+            <Button type="button" disabled={save.isPending} onClick={onSubmit}>
+              <Save />
               Salva
             </Button>
           </>

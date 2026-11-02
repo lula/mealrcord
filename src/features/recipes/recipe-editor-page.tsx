@@ -3,7 +3,7 @@ import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { ArrowDown, ArrowLeft, ArrowUp, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { PageBody, PageHeader } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -91,15 +91,19 @@ export function RecipeEditorPage() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-1 flex-col">
+    <form onSubmit={(e) => e.preventDefault()} className="flex flex-1 flex-col">
       <PageHeader
         title={recipe ? recipe.name : "Nuova ricetta"}
         actions={
           <>
-            <Button variant="outline" asChild>
-              <Link to="/recipes">Annulla</Link>
+            <Button type="button" variant="outline" asChild>
+              <Link to="/recipes">
+                <RotateCcw />
+                Annulla
+              </Link>
             </Button>
-            <Button type="submit" disabled={save.isPending}>
+            <Button type="button" disabled={save.isPending} onClick={onSubmit}>
+              <Save />
               Salva
             </Button>
           </>

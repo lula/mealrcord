@@ -268,6 +268,7 @@ function SidebarTrigger({
         onClick?.(event)
         toggleSidebar()
       }}
+      type="button"
       {...props}
     >
       <PanelLeftIcon />

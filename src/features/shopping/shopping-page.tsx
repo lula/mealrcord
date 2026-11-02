@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { PageBody, PageHeader } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -25,7 +24,6 @@ export function ShoppingPage() {
   const from = search.from ?? iso(startOfWeek(new Date()));
   const to = search.to && search.to >= from ? search.to : iso(endOfWeek(parseISO(from)));
   const { data: entries = [], isLoading } = usePlanned(from, to);
-  const [checked, setChecked] = useState<Set<string>>(new Set());
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [draft, setDraft] = useState<DateRange | undefined>();
 
@@ -36,12 +34,6 @@ export function ShoppingPage() {
 
   const setRange = (f: Date, t: Date) => navigate({ search: { from: iso(f), to: iso(t) } });
   const thisWeek = startOfWeek(new Date());
-  const toggle = (key: string) =>
-    setChecked((s) => {
-      const next = new Set(s);
-      if (!next.delete(key)) next.add(key);
-      return next;
-    });
 
   const asText = () =>
     [`Lista della spesa ${format(parseISO(from), "d/M")}–${format(parseISO(to), "d/M/yyyy")}`, "", ...lines.map((l) => `- ${l.ingredientName}: ${formatQuantity(l.quantity, l.unit)}`)].join("\n");
@@ -130,21 +122,16 @@ export function ShoppingPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-10 print:hidden" />
                   <TableHead>Ingrediente</TableHead>
                   <TableHead className="text-right">Quantità</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {lines.map((l) => {
-                  const on = checked.has(l.key);
                   return (
-                    <TableRow key={l.key} className="cursor-pointer" onClick={() => toggle(l.key)}>
-                      <TableCell className="print:hidden">
-                        <Checkbox checked={on} onCheckedChange={() => toggle(l.key)} onClick={(e) => e.stopPropagation()} aria-label={l.ingredientName} />
-                      </TableCell>
-                      <TableCell className={cn(on && "text-muted-foreground line-through")}>{l.ingredientName}</TableCell>
-                      <TableCell className={cn("text-right tabular-nums", on && "text-muted-foreground line-through")}>
+                    <TableRow key={l.key} className="cursor-pointer">
+                      <TableCell>{l.ingredientName}</TableCell>
+                      <TableCell className={cn("text-right tabular-nums")}>
                         {formatQuantity(l.quantity, l.unit)}
                       </TableCell>
                     </TableRow>
