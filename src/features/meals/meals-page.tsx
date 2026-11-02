@@ -1,21 +1,57 @@
 import { Link } from "@tanstack/react-router";
-import { Plus, Trash2, UtensilsCrossed } from "lucide-react";
+import { CalendarDays, CalendarX, Copy, EllipsisVertical, Lock, Pencil, Plus, Search, Trash2, UtensilsCrossed, X } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PageBody, PageHeader } from "@/components/page";
+import { SearchSelect } from "@/components/search-select";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { COURSES } from "@/db/schema";
-import { formatNumber } from "@/lib/units";
-import { COURSE_LABELS, plannedUsageCount, useDeleteMeal, useMeals, type MealListItem } from "./api";
+import { toPlainText } from "@/lib/rich-text";
+import { RecipeDetailDialog } from "@/features/recipes/recipe-detail-dialog";
+import { COURSE_LABELS, plannedUsageCount, useDeleteMeal, useDuplicateMeal, useMeals, useRemoveFromPlanner, type MealListItem } from "./api";
 
 export function MealsPage() {
   const { data: meals, isLoading } = useMeals();
   const del = useDeleteMeal();
+  const duplicate = useDuplicateMeal();
   const [toDelete, setToDelete] = useState<MealListItem | null>(null);
+  const [toUnplan, setToUnplan] = useState<MealListItem | null>(null);
+  const removeFromPlanner = useRemoveFromPlanner();
+  const [viewing, setViewing] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [recipeId, setRecipeId] = useState<string | undefined>();
+  const [planned, setPlanned] = useState<PlannedFilter>("all");
+
+  // Recipes that appear in at least one menu, for the recipe filter.
+  const usedRecipes = useMemo(() => {
+    const byId = new Map<string, { id: string; name: string }>();
+    for (const m of meals ?? []) for (const r of m.recipes) byId.set(r.recipeId, { id: r.recipeId, name: r.recipe.name });
+    return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name, "it"));
+  }, [meals]);
+
+  const filtered = useMemo(() => filterMeals(meals ?? [], { search, recipeId, planned }), [meals, search, recipeId, planned]);
+  const filtering = !!search.trim() || !!recipeId || planned !== "all";
+  const resetFilters = () => {
+    setSearch("");
+    setRecipeId(undefined);
+    setPlanned("all");
+  };
 
   async function askDelete(m: MealListItem) {
     const n = await plannedUsageCount(m.id);
@@ -29,76 +65,211 @@ export function MealsPage() {
   return (
     <>
       <PageHeader
-        title="Pasti"
-        description={meals && `${meals.length} pasti`}
+        title="Menu"
+        description={meals && (filtering ? `${filtered.length} di ${meals.length} menu` : `${meals.length} menu`)}
         actions={
           <Button asChild>
             <Link to="/meals/new">
-              <Plus /> Nuovo pasto
+              <Plus /> Nuovo menu
             </Link>
           </Button>
         }
       />
-      <PageBody>
+      <PageBody className="space-y-4">
         {!isLoading && meals?.length === 0 ? (
           <Empty className="border">
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <UtensilsCrossed />
               </EmptyMedia>
-              <EmptyTitle>Nessun pasto</EmptyTitle>
-              <EmptyDescription>Un pasto raggruppa ricette in antipasti, primi, secondi e dolci.</EmptyDescription>
+              <EmptyTitle>Nessun menu</EmptyTitle>
+              <EmptyDescription>Un menu raggruppa ricette in antipasti, primi, secondi e dolci.</EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
               <Button asChild>
                 <Link to="/meals/new">
-                  <Plus /> Nuovo pasto
+                  <Plus /> Nuovo menu
                 </Link>
               </Button>
             </EmptyContent>
           </Empty>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {meals?.map((m) => (
-              <Card key={m.id} className="hover:border-primary/40 transition-colors">
-                <CardHeader>
-                  <CardTitle>
-                    <Link to="/meals/$mealId" params={{ mealId: m.id }} className="hover:underline">
-                      {m.name}
-                    </Link>
-                  </CardTitle>
-                  <CardDescription>
-                    {m.coefficient !== 1 ? <Badge variant="outline">Coefficiente ×{formatNumber(m.coefficient)}</Badge> : m.notes || " "}
-                  </CardDescription>
-                  <CardAction>
-                    <Button variant="ghost" size="icon" aria-label="Elimina" onClick={() => askDelete(m)}>
-                      <Trash2 />
-                    </Button>
-                  </CardAction>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  {COURSES.map((c) => {
-                    const items = m.recipes.filter((r) => r.course === c);
-                    if (!items.length) return null;
-                    return (
-                      <div key={c}>
-                        <div className="text-muted-foreground text-xs font-medium uppercase">{COURSE_LABELS[c]}</div>
-                        <div>{items.map((r) => r.recipe.name).join(" · ")}</div>
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              <InputGroup className="max-w-sm">
+                <InputGroupAddon>
+                  <Search />
+                </InputGroupAddon>
+                <InputGroupInput placeholder="Cerca per nome…" value={search} onChange={(e) => setSearch(e.target.value)} />
+              </InputGroup>
+              <SearchSelect
+                items={usedRecipes}
+                value={recipeId}
+                onChange={setRecipeId}
+                allLabel="Tutte le ricette"
+                searchPlaceholder="Cerca ricetta…"
+                emptyText="Nessuna ricetta trovata."
+                aria-label="Filtra per ricetta"
+              />
+              <ToggleGroup type="single" variant="outline" value={planned} onValueChange={(v) => v && setPlanned(v as PlannedFilter)}>
+                <ToggleGroupItem value="all">Tutti</ToggleGroupItem>
+                <ToggleGroupItem value="planned">Nel planner</ToggleGroupItem>
+                <ToggleGroupItem value="unplanned">Non pianificati</ToggleGroupItem>
+              </ToggleGroup>
+              {filtering && (
+                <Button variant="outline" onClick={resetFilters}>
+                  <X /> Rimuovi filtri
+                </Button>
+              )}
+            </div>
+            {filtered.length === 0 && !isLoading && (
+              <Empty className="border">
+                <EmptyHeader>
+                  <EmptyTitle>Nessun menu trovato</EmptyTitle>
+                  <EmptyDescription>Nessun menu corrisponde ai filtri.</EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                  <Button variant="outline" onClick={resetFilters}>
+                    <X /> Rimuovi filtri
+                  </Button>
+                </EmptyContent>
+              </Empty>
+            )}
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {filtered.map((m) => (
+                <Card key={m.id} className="hover:border-primary/40 transition-colors">
+                  <CardHeader>
+                    <CardTitle>
+                      <Link to="/meals/$mealId" params={{ mealId: m.id }} className="hover:underline">
+                        {m.name}
+                      </Link>
+                    </CardTitle>
+                    <CardDescription className="flex flex-wrap items-center gap-2">
+                      {m.planned.length > 0 && (
+                        <Badge variant="secondary" asChild>
+                          <Link to="/planner" search={{ meal: m.id }} title="Vedi le date nel planner">
+                            <Lock /> Nel planner ({m.planned.length})
+                          </Link>
+                        </Badge>
+                      )}
+                      {toPlainText(m.notes) || " "}
+                    </CardDescription>
+                    <CardAction>
+                      {m.planned.length > 0 ? (
+                        <Button variant="ghost" size="icon" aria-label="Visualizza" title="Nel planner: sola lettura" asChild>
+                          <Link to="/meals/$mealId" params={{ mealId: m.id }}>
+                            <Lock />
+                          </Link>
+                        </Button>
+                      ) : (
+                        <Button variant="ghost" size="icon" aria-label="Modifica" title="Modifica" asChild>
+                          <Link to="/meals/$mealId" params={{ mealId: m.id }}>
+                            <Pencil />
+                          </Link>
+                        </Button>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" aria-label="Altre azioni">
+                            <EllipsisVertical />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem disabled={duplicate.isPending} onSelect={() => duplicate.mutate(m.id)}>
+                            <Copy /> Duplica
+                          </DropdownMenuItem>
+                          <DropdownMenuItem disabled={m.planned.length === 0} asChild={m.planned.length > 0}>
+                            {m.planned.length > 0 ? (
+                              <Link to="/planner" search={{ meal: m.id }}>
+                                <CalendarDays /> Pianificazioni
+                              </Link>
+                            ) : (
+                              <>
+                                <CalendarDays /> Mai pianificato
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {m.planned.length > 0 && (
+                            <DropdownMenuItem variant="destructive" onSelect={() => setToUnplan(m)}>
+                              <CalendarX /> Rimuovi da tutte le pianificazioni
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem variant="destructive" onSelect={() => askDelete(m)}>
+                            <Trash2 /> Elimina
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </CardAction>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    {COURSES.map((c) => {
+                      const items = m.recipes.filter((r) => r.course === c);
+                      if (!items.length) return null;
+                      return (
+                        <div key={c}>
+                          <div className="text-muted-foreground text-xs font-medium uppercase">{COURSE_LABELS[c]}</div>
+                          <div>
+                            {items.map((r, i) => (
+                              <span key={r.recipeId}>
+                                {i > 0 && " · "}
+                                <button type="button" className="hover:text-primary cursor-pointer hover:underline" onClick={() => setViewing(r.recipeId)}>
+                                  {r.recipe.name}
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {m.dishes.length > 0 && (
+                      <div>
+                        <div className="text-muted-foreground text-xs font-medium uppercase">Piatti unici</div>
+                        <div>
+                          {m.dishes.map((d, i) => (
+                            <span key={d.dishId}>
+                              {i > 0 && " · "}
+                              <Link to="/dishes/$dishId" params={{ dishId: d.dishId }} className="hover:text-primary hover:underline">
+                                {d.dish.name}
+                              </Link>
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </>
         )}
       </PageBody>
+
+      <RecipeDetailDialog recipeId={viewing} onClose={() => setViewing(null)} />
+
+      <AlertDialog open={!!toUnplan} onOpenChange={(o) => !o && setToUnplan(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Rimuovere «{toUnplan?.name}» da tutte le pianificazioni?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Verrà tolto dal planner in {toUnplan?.planned.length} {toUnplan?.planned.length === 1 ? "data" : "date"}, passate e future, insieme a coperti e
+              coefficienti di quelle pianificazioni. Il menu resta e tornerà modificabile.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={() => toUnplan && removeFromPlanner.mutate(toUnplan.id)}>
+              Rimuovi
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminare «{toDelete?.name}»?</AlertDialogTitle>
-            <AlertDialogDescription>Le ricette del pasto non verranno eliminate.</AlertDialogDescription>
+            <AlertDialogDescription>Le ricette del menu non verranno eliminate.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annulla</AlertDialogCancel>
@@ -109,5 +280,21 @@ export function MealsPage() {
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+type PlannedFilter = "all" | "planned" | "unplanned";
+
+/** Menus matching a name search, containing a recipe, and planned or not. */
+export function filterMeals<T extends { name: string; recipes: { recipeId: string }[]; planned: unknown[] }>(
+  meals: T[],
+  { search, recipeId, planned }: { search: string; recipeId?: string; planned: PlannedFilter },
+): T[] {
+  const q = search.trim().toLowerCase();
+  return meals.filter(
+    (m) =>
+      (!q || m.name.toLowerCase().includes(q)) &&
+      (!recipeId || m.recipes.some((r) => r.recipeId === recipeId)) &&
+      (planned === "all" || (planned === "planned") === m.planned.length > 0),
   );
 }

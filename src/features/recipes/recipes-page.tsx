@@ -1,32 +1,59 @@
 import { useMemo, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { BookOpen, Copy, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { BookOpen, Copy, EllipsisVertical, Pencil, Plus, Search, Trash2, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { PageBody, PageHeader } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ListPagination } from "@/components/list-pagination";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toPlainText } from "@/lib/rich-text";
 import { TagBadges, TagPicker } from "@/features/tags/tag-picker";
-import { mealsUsingRecipe, useDeleteRecipe, useDuplicateRecipe, useRecipes, type RecipeListItem } from "./api";
+import { dishesUsingRecipe, mealsUsingRecipe, useDeleteRecipe, useDuplicateRecipe, useRecipes, type RecipeListItem } from "./api";
+
+const PAGE_SIZE = 20;
 
 export function RecipesPage() {
   const { data: recipes, isLoading } = useRecipes();
   const [search, setSearch] = useState("");
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [toDelete, setToDelete] = useState<RecipeListItem | null>(null);
-  const navigate = useNavigate();
   const del = useDeleteRecipe();
   const duplicate = useDuplicateRecipe();
 
-  const filtered = useMemo(() => filterRecipes(recipes ?? [], search, tagIds), [recipes, search, tagIds]);
+  const [page, setPage] = useState(1);
+
+  // Most recently changed first, PAGE_SIZE per page.
+  const filtered = useMemo(
+    () => filterRecipes(recipes ?? [], search, tagIds).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+    [recipes, search, tagIds],
+  );
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   async function askDelete(r: RecipeListItem) {
     const usedIn = await mealsUsingRecipe(r.id);
     if (usedIn.length) {
-      toast.error(`«${r.name}» è usata nei pasti: ${usedIn.join(", ")}. Rimuovila prima da lì.`);
+      toast.error(`«${r.name}» è usata nei menu: ${usedIn.join(", ")}. Rimuovila prima da lì.`);
+      return;
+    }
+    const inDishes = await dishesUsingRecipe(r.id);
+    if (inDishes.length) {
+      toast.error(`«${r.name}» è usata nei piatti unici: ${inDishes.join(", ")}. Rimuovila prima da lì.`);
       return;
     }
     setToDelete(r);
@@ -70,49 +97,47 @@ export function RecipesPage() {
                 <InputGroupAddon>
                   <Search />
                 </InputGroupAddon>
-                <InputGroupInput placeholder="Cerca per nome…" value={search} onChange={(e) => setSearch(e.target.value)} />
+                <InputGroupInput placeholder="Cerca per nome…" value={search} onChange={(e) => (setSearch(e.target.value), setPage(1))} />
               </InputGroup>
-              <TagPicker value={tagIds} onChange={setTagIds} placeholder="Filtra per tag" />
+              <TagPicker value={tagIds} onChange={(ids) => (setTagIds(ids), setPage(1))} placeholder="Filtra per tag" />
               {(search || tagIds.length > 0) && (
-                <Button variant="ghost" onClick={() => (setSearch(""), setTagIds([]))}>
-                  Azzera filtri
+                <Button variant="outline" onClick={() => (setSearch(""), setTagIds([]), setPage(1))}>
+                  <X />
+                  Rimuovi filtri
                 </Button>
               )}
             </div>
-            <div className="rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Tag</TableHead>
-                    <TableHead className="w-28 text-right">Persone</TableHead>
-                    <TableHead className="w-12" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((r) => (
-                    <TableRow key={r.id} className="cursor-pointer" onClick={() => navigate({ to: "/recipes/$recipeId", params: { recipeId: r.id } })}>
-                      <TableCell>
-                        <div className="font-medium">{r.name}</div>
-                        {r.description && <div className="text-muted-foreground line-clamp-1 max-w-xl text-xs">{r.description}</div>}
-                      </TableCell>
-                      <TableCell>
-                        <TagBadges tags={r.tags.map((t) => t.tag)} />
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">{r.baseServings}</TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
+            {filtered.length === 0 && !isLoading ? (
+              <Empty className="border">
+                <EmptyHeader>
+                  <EmptyTitle>Nessuna ricetta trovata</EmptyTitle>
+                  <EmptyDescription>Nessuna ricetta corrisponde ai filtri.</EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {pageItems.map((r) => (
+                  <Card key={r.id} className="hover:border-primary/40 transition-colors">
+                    <CardHeader>
+                      <CardTitle>
+                        <Link to="/recipes/$recipeId" params={{ recipeId: r.id }} className="hover:underline">
+                          {r.name}
+                        </Link>
+                      </CardTitle>
+                      <CardDescription className="line-clamp-2">{toPlainText(r.description) || "\u00a0"}</CardDescription>
+                      <CardAction>
+                        <Button variant="ghost" size="icon" aria-label="Modifica" title="Modifica" asChild>
+                          <Link to="/recipes/$recipeId" params={{ recipeId: r.id }}>
+                            <Pencil />
+                          </Link>
+                        </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" aria-label="Azioni">
-                              <MoreHorizontal />
+                            <Button variant="ghost" size="icon" aria-label="Altre azioni">
+                              <EllipsisVertical />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link to="/recipes/$recipeId" params={{ recipeId: r.id }}>
-                                <Pencil /> Modifica
-                              </Link>
-                            </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => duplicate.mutate(r.id)}>
                               <Copy /> Duplica
                             </DropdownMenuItem>
@@ -122,19 +147,19 @@ export function RecipesPage() {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {filtered.length === 0 && !isLoading && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-muted-foreground h-24 text-center">
-                        Nessuna ricetta corrisponde ai filtri.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                      </CardAction>
+                    </CardHeader>
+                    <CardContent className="mt-auto flex flex-wrap items-center gap-2 text-sm">
+                      <Badge variant="secondary">
+                        <Users /> {r.baseServings} persone
+                      </Badge>
+                      <TagBadges tags={r.tags.map((t) => t.tag)} />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+            <ListPagination page={currentPage} pageCount={pageCount} onChange={setPage} />
           </>
         )}
       </PageBody>
@@ -143,7 +168,9 @@ export function RecipesPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminare «{toDelete?.name}»?</AlertDialogTitle>
-            <AlertDialogDescription>La ricetta e i suoi ingredienti verranno eliminati. Gli ingredienti restano disponibili per altre ricette.</AlertDialogDescription>
+            <AlertDialogDescription>
+              La ricetta e i suoi ingredienti verranno eliminati. Gli ingredienti restano disponibili per altre ricette.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annulla</AlertDialogCancel>
@@ -160,9 +187,11 @@ export function RecipesPage() {
 /** Name contains `search` (case/accents ignored) and has every tag in `tagIds`. */
 export function filterRecipes<T extends { name: string; tags: { tagId: string }[] }>(recipes: T[], search: string, tagIds: string[]) {
   const q = normalize(search.trim());
-  return recipes.filter(
-    (r) => (!q || normalize(r.name).includes(q)) && tagIds.every((id) => r.tags.some((t) => t.tagId === id)),
-  );
+  return recipes.filter((r) => (!q || normalize(r.name).includes(q)) && tagIds.every((id) => r.tags.some((t) => t.tagId === id)));
 }
 
-const normalize = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+const normalize = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();

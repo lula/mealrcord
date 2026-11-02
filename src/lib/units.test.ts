@@ -12,7 +12,7 @@ describe("scaleFactor", () => {
   it("scales by guests over base servings", () => {
     expect(scaleFactor(40, 4)).toBe(10);
   });
-  it("applies the meal coefficient", () => {
+  it("applies the quantity coefficient", () => {
     expect(scaleFactor(40, 4, 0.8)).toBeCloseTo(8);
   });
   it("returns 0 for invalid base servings", () => {

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { eq } from "drizzle-orm";
 import { db, newId, nowIso } from "@/db/client";
-import { mealRecipes, meals, recipeIngredients, recipes, recipeTags } from "@/db/schema";
+import { dishes, dishRecipes, mealRecipes, meals, recipeIngredients, recipes, recipeSteps, recipeTags } from "@/db/schema";
 import { useDbMutation } from "@/lib/query";
 
 export const useRecipes = () =>
@@ -22,6 +22,7 @@ export const getRecipe = (id: string) =>
     with: {
       tags: { with: { tag: true } },
       ingredients: { with: { ingredient: true, unit: true }, orderBy: (ri, { asc }) => [asc(ri.position)] },
+      steps: { orderBy: (st, { asc }) => [asc(st.position)] },
     },
   });
 
@@ -36,14 +37,18 @@ export type RecipeInput = {
   description: string;
   baseServings: number;
   ingredients: { ingredientId: string; quantity: number; unitId: string }[];
+  /** Preparation steps in order; blank ones are dropped. */
+  steps: string[];
   tagIds: string[];
 };
 
-/** Creates or replaces a recipe with its ingredients and tags in one transaction. */
+/** Creates or replaces a recipe with its ingredients, steps and tags in one transaction. */
 export async function saveRecipe(input: RecipeInput): Promise<string> {
   const id = input.id ?? newId();
   const now = nowIso();
   const fields = { name: input.name.trim(), description: input.description.trim(), baseServings: input.baseServings, updatedAt: now };
+
+  const steps = input.steps.map((t) => t.trim()).filter(Boolean);
 
   const head = input.id
     ? db.update(recipes).set(fields).where(eq(recipes.id, id))
@@ -52,8 +57,10 @@ export async function saveRecipe(input: RecipeInput): Promise<string> {
   await db.batch([
     head,
     db.delete(recipeIngredients).where(eq(recipeIngredients.recipeId, id)),
+    db.delete(recipeSteps).where(eq(recipeSteps.recipeId, id)),
     db.delete(recipeTags).where(eq(recipeTags.recipeId, id)),
     ...input.ingredients.map((ri, position) => db.insert(recipeIngredients).values({ recipeId: id, ...ri, position })),
+    ...steps.map((text, position) => db.insert(recipeSteps).values({ recipeId: id, position, text })),
     ...input.tagIds.map((tagId) => db.insert(recipeTags).values({ recipeId: id, tagId })),
   ]);
   return id;
@@ -71,6 +78,12 @@ export async function mealsUsingRecipe(recipeId: string) {
   return rows.map((r) => r.name);
 }
 
+/** Names of the "piatti unici" that use a recipe. */
+export async function dishesUsingRecipe(recipeId: string) {
+  const rows = await db.select({ name: dishes.name }).from(dishRecipes).innerJoin(dishes, eq(dishes.id, dishRecipes.dishId)).where(eq(dishRecipes.recipeId, recipeId));
+  return rows.map((r) => r.name);
+}
+
 export const useDeleteRecipe = () =>
   useDbMutation((id: string) => db.delete(recipes).where(eq(recipes.id, id)).run(), { success: "Ricetta eliminata" });
 
@@ -84,6 +97,7 @@ export const useDuplicateRecipe = () =>
         description: r.description,
         baseServings: r.baseServings,
         ingredients: r.ingredients.map(({ ingredientId, quantity, unitId }) => ({ ingredientId, quantity, unitId })),
+        steps: r.steps.map((st) => st.text),
         tagIds: r.tags.map((t) => t.tagId),
       });
     },

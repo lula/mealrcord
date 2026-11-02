@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { addWeeks, endOfWeek, format, parseISO, startOfWeek } from "date-fns";
 import type { DateRange } from "react-day-picker";
-import { CalendarIcon, Copy, Printer, ShoppingCart } from "lucide-react";
+import { CalendarIcon, Copy, Share2, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { PageBody, PageHeader } from "@/components/page";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { usePlanned, scalePlanned } from "@/features/planner/api";
+import { plannedLines, usePlanned } from "@/features/planner/api";
 import { aggregate, formatQuantity } from "@/lib/units";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +30,7 @@ export function ShoppingPage() {
   const [draft, setDraft] = useState<DateRange | undefined>();
 
   const lines = useMemo(
-    () => aggregate(entries.flatMap((e) => scalePlanned(e).flatMap((c) => c.recipes.flatMap((r) => r.lines)))),
+    () => aggregate(entries.flatMap(plannedLines)),
     [entries],
   );
 
@@ -50,7 +50,7 @@ export function ShoppingPage() {
     <>
       <PageHeader
         title="Lista della spesa"
-        description={`${entries.length} pasti pianificati nel periodo`}
+        description={`${entries.length} menu pianificati nel periodo`}
         actions={
           <>
             <Button
@@ -63,8 +63,11 @@ export function ShoppingPage() {
             >
               <Copy /> Copia
             </Button>
-            <Button variant="outline" disabled={!lines.length} onClick={() => window.print()}>
+            {/* <Button variant="outline" disabled={!lines.length} onClick={() => window.print()}>
               <Printer /> Stampa
+            </Button> */}
+            <Button variant="outline" disabled={!lines.length}>
+              <Share2  /> Condividi
             </Button>
           </>
         }
@@ -119,7 +122,7 @@ export function ShoppingPage() {
                 <ShoppingCart />
               </EmptyMedia>
               <EmptyTitle>Niente da comprare</EmptyTitle>
-              <EmptyDescription>Non ci sono pasti pianificati con ingredienti in questo periodo.</EmptyDescription>
+              <EmptyDescription>Non ci sono menu pianificati con ingredienti in questo periodo.</EmptyDescription>
             </EmptyHeader>
           </Empty>
         ) : (

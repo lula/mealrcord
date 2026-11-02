@@ -1,5 +1,7 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { BookOpen, CalendarDays, ChefHat, Moon, Settings, ShoppingCart, Sun, UtensilsCrossed } from "lucide-react";
+import { BookOpen, CalendarDays, CookingPot, Moon, Settings, ShoppingCart, Sun, UtensilsCrossed } from "lucide-react";
+import appIcon from "@/assets/app-icon.svg";
+import { useNavCounts } from "@/components/nav-counts";
 import { useTheme } from "@/components/theme";
 import {
   Sidebar,
@@ -10,6 +12,7 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
@@ -17,7 +20,8 @@ import {
 
 const NAV = [
   { to: "/planner", label: "Planner", icon: CalendarDays },
-  { to: "/meals", label: "Pasti", icon: UtensilsCrossed },
+  { to: "/meals", label: "Menu", icon: UtensilsCrossed },
+  { to: "/dishes", label: "Piatti unici", icon: CookingPot },
   { to: "/recipes", label: "Ricette", icon: BookOpen },
   { to: "/shopping", label: "Lista della spesa", icon: ShoppingCart },
   { to: "/settings", label: "Impostazioni", icon: Settings },
@@ -27,19 +31,18 @@ export function AppLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { resolvedTheme, setTheme } = useTheme();
   const dark = resolvedTheme === "dark";
+  const { data: counts } = useNavCounts();
 
   return (
     <SidebarProvider>
-      <Sidebar collapsible="icon">
+      <Sidebar variant="floating" collapsible="icon">
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" asChild>
                 <Link to="/planner">
-                  <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-md">
-                    <ChefHat className="size-4" />
-                  </div>
-                  <span className="font-semibold">mealrcord</span>
+                  <img src={appIcon} alt="" className="size-8 shrink-0 rounded-[7px] ring-1 ring-white/30" />
+                  <span className="font-semibold group-data-[collapsible=icon]:hidden">mealrcord</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -50,13 +53,14 @@ export function AppLayout() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {NAV.map(({ to, label, icon: Icon }) => (
-                  <SidebarMenuItem key={to}>
+                  <SidebarMenuItem key={to} className="my-1">
                     <SidebarMenuButton asChild isActive={pathname.startsWith(to)} tooltip={label}>
                       <Link to={to}>
                         <Icon />
                         <span>{label}</span>
                       </Link>
                     </SidebarMenuButton>
+                    {counts?.[to] != null && <SidebarMenuBadge>{counts[to]}</SidebarMenuBadge>}
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>

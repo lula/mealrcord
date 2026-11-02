@@ -21,7 +21,7 @@ export const nowIso = () => new Date().toISOString();
 export function dbErrorMessage(e: unknown): string {
   const msg = typeof e === "string" ? e : e instanceof Error ? e.message : String(e);
   if (msg.includes("FOREIGN KEY constraint failed")) {
-    return "Elemento in uso: rimuovilo prima da ricette, pasti o planner.";
+    return "Elemento in uso: rimuovilo prima da ricette, menu o planner.";
   }
   if (msg.includes("UNIQUE constraint failed")) return "Esiste già un elemento con questo nome.";
   return msg;

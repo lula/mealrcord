@@ -1,6 +1,6 @@
 // Test helper: implements the Rust db_query/db_batch contract on top of
-// node:sqlite, using the real migration, so the Drizzle layer can be tested.
-import { readFileSync } from "node:fs";
+// node:sqlite, using the real migrations, so the Drizzle layer can be tested.
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
@@ -9,7 +9,10 @@ type Query = { sql: string; params: unknown[]; method: "run" | "all" | "values" 
 export function createFakeDb() {
   const db = new DatabaseSync(":memory:");
   db.exec("PRAGMA foreign_keys = ON;");
-  db.exec(readFileSync(path.resolve(import.meta.dirname, "../../src-tauri/migrations/001_init.sql"), "utf8"));
+  const dir = path.resolve(import.meta.dirname, "../../src-tauri/migrations");
+  for (const file of readdirSync(dir).filter((f) => f.endsWith(".sql")).sort()) {
+    db.exec(readFileSync(path.join(dir, file), "utf8"));
+  }
 
   const run = (q: Query) => {
     const stmt = db.prepare(q.sql);

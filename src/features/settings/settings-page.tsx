@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -21,7 +21,8 @@ import { useDeleteIngredient, useIngredients, useUpdateIngredient } from "@/feat
 import { useCreateTag, useDeleteTag, useTags } from "@/features/tags/api";
 import { DIMENSION_LABELS, useCreateUnit, useDeleteUnit, useUnits } from "@/features/units/api";
 import { UnitSelect } from "@/features/units/unit-select";
-import { formatNumber } from "@/lib/units";
+import { DEFAULT_UNIT_ID, formatNumber } from "@/lib/units";
+import { useSaveSetting, useSettings } from "./api";
 import { exportJson } from "./backup";
 
 export function SettingsPage() {
@@ -29,11 +30,12 @@ export function SettingsPage() {
     <>
       <PageHeader title="Impostazioni" />
       <PageBody>
-        <Tabs defaultValue="ingredients" className="max-w-4xl">
+        <Tabs defaultValue="ingredients">
           <TabsList>
             <TabsTrigger value="ingredients">Ingredienti</TabsTrigger>
             <TabsTrigger value="tags">Tag</TabsTrigger>
-            <TabsTrigger value="units">Unità di misura</TabsTrigger>
+            <TabsTrigger value="units">Simbolo</TabsTrigger>
+            <TabsTrigger value="preferences">Preferenze</TabsTrigger>
             <TabsTrigger value="backup">Backup</TabsTrigger>
           </TabsList>
           <TabsContent value="ingredients">
@@ -44,6 +46,9 @@ export function SettingsPage() {
           </TabsContent>
           <TabsContent value="units">
             <UnitsTab />
+          </TabsContent>
+          <TabsContent value="preferences">
+            <PreferencesTab />
           </TabsContent>
           <TabsContent value="backup">
             <BackupTab />
@@ -88,7 +93,7 @@ function IngredientsTab() {
             {ingredients.map((i) => (
               <TableRow key={i.id}>
                 <TableCell className="font-medium">{i.name}</TableCell>
-                <TableCell>{i.defaultUnitId ? unitSymbol.get(i.defaultUnitId) : "—"}</TableCell>
+                <TableCell>{unitSymbol.get(i.defaultUnitId ?? DEFAULT_UNIT_ID)}</TableCell>
                 <TableCell className="text-right tabular-nums">{i.usage}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon-sm" aria-label="Modifica" onClick={() => setEditing(i)}>
@@ -142,7 +147,7 @@ function IngredientDialog({ value, onClose }: { value: { id: string; name: strin
               </Field>
               <Field>
                 <FieldLabel>Unità predefinita</FieldLabel>
-                <UnitSelect value={draft.defaultUnitId ?? ""} onChange={(id) => setDraft({ ...draft, defaultUnitId: id })} className="w-40" />
+                <UnitSelect value={draft.defaultUnitId ?? DEFAULT_UNIT_ID} onChange={(id) => setDraft({ ...draft, defaultUnitId: id })} className="w-40" />
               </Field>
             </FieldGroup>
           )}
@@ -326,6 +331,91 @@ function UnitsTab() {
 }
 
 const stamp = () => format(new Date(), "yyyy-MM-dd_HHmm");
+
+function PreferencesTab() {
+  return (
+    <div className="grid max-w-4xl gap-4 md:grid-cols-2">
+      <NumberSettingCard
+        settingKey="guestsWarningPercent"
+        title="Planner"
+        description="Controlli quando pianifichi un menu."
+        label="Soglia avviso coperti (%)"
+        help="Avvisa quando la somma dei coperti delle ricette di una portata supera i coperti della pianificazione di più di questa percentuale. 0 = avvisa appena li supera."
+        min={0}
+        step={5}
+      />
+      <NumberSettingCard
+        settingKey="maxDishRecipes"
+        title="Piatti unici"
+        description="Regole per i piatti unici."
+        label="Ricette massime per piatto"
+        help="Quante ricette al massimo può contenere un piatto unico. Non cambia i piatti unici già salvati."
+        min={1}
+        step={1}
+        integer
+      />
+    </div>
+  );
+}
+
+/** A card that edits one numeric preference. */
+function NumberSettingCard({
+  settingKey,
+  title,
+  description,
+  label,
+  help,
+  min,
+  step,
+  integer = false,
+}: {
+  settingKey: "guestsWarningPercent" | "maxDishRecipes";
+  title: string;
+  description: string;
+  label: string;
+  help: string;
+  min: number;
+  step: number;
+  integer?: boolean;
+}) {
+  const { data: settings } = useSettings();
+  const save = useSaveSetting();
+  const [draft, setDraft] = useState<string | null>(null);
+  const current = settings?.[settingKey];
+  const value = draft ?? (current != null ? String(current) : "");
+  const parsed = Number(value);
+  const valid = value !== "" && Number.isFinite(parsed) && parsed >= min && (!integer || Number.isInteger(parsed));
+  const id = `setting-${settingKey}`;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form
+          className="space-y-4"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!valid) return;
+            await save.mutateAsync({ key: settingKey, value: parsed });
+            setDraft(null);
+          }}
+        >
+          <Field>
+            <FieldLabel htmlFor={id}>{label}</FieldLabel>
+            <Input id={id} type="number" min={min} step={step} className="w-32" value={value} onChange={(e) => setDraft(e.target.value)} />
+            <FieldDescription>{help}</FieldDescription>
+          </Field>
+          <Button type="submit" disabled={!valid || parsed === current || save.isPending}>
+            Salva
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
 
 function BackupTab() {
   const qc = useQueryClient();

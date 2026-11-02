@@ -4,16 +4,15 @@ import { db, newId } from "@/db/client";
 import { tags, type Course } from "@/db/schema";
 import { useDbMutation } from "@/lib/query";
 
-/** System tags first (in course order), then custom tags alphabetically. */
+/** System tags first (courses in menu order, then the others like "Contorno"), then custom tags alphabetically. */
 export const useTags = () =>
   useQuery({
     queryKey: ["tags"],
     queryFn: async () => {
       const rows = await db.select().from(tags).orderBy(desc(tags.isSystem), asc(tags.name));
       const order: Course[] = ["starter", "first", "main", "dessert"];
-      return rows.sort((a, b) =>
-        a.isSystem && b.isSystem ? order.indexOf(a.course!) - order.indexOf(b.course!) : 0,
-      );
+      const rank = (c: Course | null) => (c ? order.indexOf(c) : order.length);
+      return rows.sort((a, b) => (a.isSystem && b.isSystem ? rank(a.course) - rank(b.course) : 0));
     },
   });
 

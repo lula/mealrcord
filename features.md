@@ -9,6 +9,7 @@ List of recipes.
 
 ### Recipe editor
 A recipe has a name, description and a set of ingredients with their quantity and unit (ingredients can be reused among different recipes).
+A recipe has an ordered list of preparation steps.
 A recipe has also a set of optional tags:
 - system tags: starter, first course, main corse, dessert. Cannot be deleted.
 - custom tags: users can add their own tags, which can be deleted.

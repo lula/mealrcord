@@ -19,7 +19,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <RouterProvider router={router} />
-          <Toaster richColors position="bottom-right" />
+          <Toaster richColors position="bottom-center" />
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>
