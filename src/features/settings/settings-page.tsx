@@ -29,11 +29,11 @@ export function SettingsPage() {
     <>
       <PageHeader title="Impostazioni" />
       <PageBody>
-        <Tabs defaultValue="ingredients" className="max-w-4xl">
+        <Tabs defaultValue="ingredients">
           <TabsList>
             <TabsTrigger value="ingredients">Ingredienti</TabsTrigger>
             <TabsTrigger value="tags">Tag</TabsTrigger>
-            <TabsTrigger value="units">Unità di misura</TabsTrigger>
+            <TabsTrigger value="units">Simbolo</TabsTrigger>
             <TabsTrigger value="backup">Backup</TabsTrigger>
           </TabsList>
           <TabsContent value="ingredients">
@@ -225,7 +225,7 @@ function UnitsTab() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Unità di misura</CardTitle>
+        <CardTitle>Simbolo</CardTitle>
         <CardDescription>
           Peso e volume vengono convertiti e sommati nella lista della spesa (base: g e ml). Le unità «Altro» si sommano solo tra loro.
         </CardDescription>

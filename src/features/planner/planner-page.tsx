@@ -90,7 +90,7 @@ export function PlannerPage() {
           </>
         }
       />
-      <div className="flex flex-wrap items-center gap-2 border-b px-4 py-2">
+      <div className="flex flex-wrap items-center gap-2 border-b px-2 py-2">
         <Button variant="outline" size="sm" onClick={() => go({ date: undefined })}>
           Oggi
         </Button>
@@ -114,7 +114,7 @@ export function PlannerPage() {
         </ToggleGroup>
       </div>
 
-      <PageBody>
+      <PageBody className={view === "week" ? "flex flex-col" : ""}>
         {view === "month" && (
           <MonthView
             anchor={anchor}
@@ -228,16 +228,23 @@ function EntryChip({ entry, onSelect, compact }: { entry: PlannedEntry; onSelect
 
 function WeekView({ days, byDate, onOpenDay, onAdd, onSelect }: GridProps) {
   return (
-    <div className="grid gap-3 md:grid-cols-7">
+    <div className="grid flex-1 divide-y md:grid-cols-7 md:divide-x md:divide-y-0">
       {days.map((d) => {
         const key = iso(d);
         const list = byDate.get(key) ?? [];
         return (
-          <div key={key} className={cn("group flex min-h-40 flex-col rounded-lg border p-2", isToday(d) && "border-primary")}>
+          <div key={key} className="group flex min-h-40 flex-col p-2">
             <div className="mb-2 flex items-center justify-between">
-              <button type="button" onClick={() => onOpenDay(key)} className="text-left hover:underline">
-                <span className="text-muted-foreground text-xs capitalize">{format(d, "EEE")}</span>{" "}
-                <span className={cn("font-semibold", isToday(d) && "text-primary")}>{format(d, "d")}</span>
+              <button type="button" onClick={() => onOpenDay(key)} className="flex items-center gap-1.5 text-left hover:underline">
+                <span className="text-muted-foreground text-xs capitalize">{format(d, "EEE")}</span>
+                <span
+                  className={cn(
+                    "flex size-5 items-center justify-center rounded-full font-semibold text-sm",
+                    isToday(d) && "bg-primary text-primary-foreground",
+                  )}
+                >
+                  {format(d, "d")}
+                </span>
               </button>
               <Button variant="ghost" size="icon-xs" onClick={() => onAdd(key)} aria-label="Aggiungi" className="opacity-60 group-hover:opacity-100">
                 <Plus />
