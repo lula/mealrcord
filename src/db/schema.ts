@@ -44,6 +44,16 @@ export const recipeIngredients = sqliteTable(
   (t) => [primaryKey({ columns: [t.recipeId, t.ingredientId] })],
 );
 
+export const recipeSteps = sqliteTable(
+  "recipe_steps",
+  {
+    recipeId: text("recipe_id").notNull().references(() => recipes.id),
+    position: integer("position").notNull(),
+    text: text("text").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.recipeId, t.position] })],
+);
+
 export const tags = sqliteTable("tags", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -99,6 +109,7 @@ export const ingredientsRelations = relations(ingredients, ({ one, many }) => ({
 
 export const recipesRelations = relations(recipes, ({ many }) => ({
   ingredients: many(recipeIngredients),
+  steps: many(recipeSteps),
   tags: many(recipeTags),
   mealRecipes: many(mealRecipes),
 }));
@@ -107,6 +118,10 @@ export const recipeIngredientsRelations = relations(recipeIngredients, ({ one })
   recipe: one(recipes, { fields: [recipeIngredients.recipeId], references: [recipes.id] }),
   ingredient: one(ingredients, { fields: [recipeIngredients.ingredientId], references: [ingredients.id] }),
   unit: one(units, { fields: [recipeIngredients.unitId], references: [units.id] }),
+}));
+
+export const recipeStepsRelations = relations(recipeSteps, ({ one }) => ({
+  recipe: one(recipes, { fields: [recipeSteps.recipeId], references: [recipes.id] }),
 }));
 
 export const tagsRelations = relations(tags, ({ many }) => ({

@@ -14,7 +14,10 @@ use serde_json::Value as JsonValue;
 use tauri::State;
 
 /// Ordered migrations. The index + 1 is the schema version (`PRAGMA user_version`).
-const MIGRATIONS: &[&str] = &[include_str!("../migrations/001_init.sql")];
+const MIGRATIONS: &[&str] = &[
+    include_str!("../migrations/001_init.sql"),
+    include_str!("../migrations/002_recipe_steps.sql"),
+];
 
 pub struct Db {
     conn: Mutex<Connection>,

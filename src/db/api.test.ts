@@ -29,6 +29,7 @@ async function seed() {
       { ingredientId: flour, quantity: 400, unitId: "unit-g" },
       { ingredientId: eggs, quantity: 4, unitId: "unit-pcs" },
     ],
+    steps: ["Impastare farina e uova", "  ", "Stendere e tagliare"],
     tagIds: ["tag-first"],
   });
   const cake = await saveRecipe({
@@ -36,6 +37,7 @@ async function seed() {
     description: "",
     baseServings: 8,
     ingredients: [{ ingredientId: flour, quantity: 0.3, unitId: "unit-kg" }],
+    steps: [],
     tagIds: ["tag-dessert"],
   });
   const meal = await saveMeal({
@@ -55,21 +57,23 @@ describe("data layer", () => {
     expect(r?.ingredients.map((i) => i.ingredient.name)).toEqual(["Farina", "Uova"]);
     expect(r?.ingredients[0].unit.symbol).toBe("g");
     expect(r?.tags.map((t) => t.tag.name)).toEqual(["Primo"]);
+    expect(r?.steps.map((st) => st.text)).toEqual(["Impastare farina e uova", "Stendere e tagliare"]);
   });
 
   it("replaces ingredients on update", async () => {
     const { pasta, flour } = await seed();
-    await saveRecipe({ id: pasta, name: "Tagliatelle", description: "x", baseServings: 2, ingredients: [{ ingredientId: flour, quantity: 200, unitId: "unit-g" }], tagIds: [] });
+    await saveRecipe({ id: pasta, name: "Tagliatelle", description: "x", baseServings: 2, ingredients: [{ ingredientId: flour, quantity: 200, unitId: "unit-g" }], steps: ["Cuocere"], tagIds: [] });
     const r = await getRecipe(pasta);
     expect(r?.baseServings).toBe(2);
     expect(r?.ingredients).toHaveLength(1);
     expect(r?.tags).toHaveLength(0);
+    expect(r?.steps.map((st) => st.text)).toEqual(["Cuocere"]);
   });
 
   it("rolls back a failed batch", async () => {
     const { pasta } = await seed();
     await expect(
-      saveRecipe({ id: pasta, name: "Rotto", description: "", baseServings: 4, ingredients: [{ ingredientId: "missing", quantity: 1, unitId: "unit-g" }], tagIds: [] }),
+      saveRecipe({ id: pasta, name: "Rotto", description: "", baseServings: 4, ingredients: [{ ingredientId: "missing", quantity: 1, unitId: "unit-g" }], steps: [], tagIds: [] }),
     ).rejects.toThrow();
     expect((await getRecipe(pasta))?.name).toBe("Tagliatelle");
   });
