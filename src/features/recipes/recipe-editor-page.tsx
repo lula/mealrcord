@@ -106,40 +106,40 @@ export function RecipeEditorPage() {
           </>
         }
       />
-      <PageBody className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        <Card className="self-start">
-          <CardHeader>
-            <CardTitle>Dettagli</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <FieldGroup>
-              <Field data-invalid={!!form.formState.errors.name}>
-                <FieldLabel htmlFor="name">Nome</FieldLabel>
-                <Input id="name" autoFocus={!recipeId} {...form.register("name")} />
-                <FieldError errors={[form.formState.errors.name]} />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="description">Descrizione</FieldLabel>
-                <Textarea id="description" rows={5} {...form.register("description")} />
-              </Field>
-              <Field data-invalid={!!form.formState.errors.baseServings} className="max-w-40">
-                <FieldLabel htmlFor="baseServings">Persone (base)</FieldLabel>
-                <Input id="baseServings" type="number" min={1} step={1} {...form.register("baseServings", { valueAsNumber: true })} />
-                <FieldError errors={[form.formState.errors.baseServings]} />
-              </Field>
-              <Field>
-                <FieldLabel>Tag</FieldLabel>
-                <Controller
-                  control={form.control}
-                  name="tagIds"
-                  render={({ field }) => <TagPicker value={field.value} onChange={field.onChange} allowCreate placeholder="Aggiungi tag" />}
-                />
-              </Field>
-            </FieldGroup>
-          </CardContent>
-        </Card>
+      <PageBody className="flex flex-col gap-6">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+          <Card className="self-start">
+            <CardHeader>
+              <CardTitle>Dettagli</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FieldGroup>
+                <Field data-invalid={!!form.formState.errors.name}>
+                  <FieldLabel htmlFor="name">Nome</FieldLabel>
+                  <Input id="name" autoFocus={!recipeId} {...form.register("name")} />
+                  <FieldError errors={[form.formState.errors.name]} />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="description">Descrizione</FieldLabel>
+                  <Textarea id="description" rows={5} {...form.register("description")} />
+                </Field>
+                <Field data-invalid={!!form.formState.errors.baseServings} className="max-w-40">
+                  <FieldLabel htmlFor="baseServings">Persone (base)</FieldLabel>
+                  <Input id="baseServings" type="number" min={1} step={1} {...form.register("baseServings", { valueAsNumber: true })} />
+                  <FieldError errors={[form.formState.errors.baseServings]} />
+                </Field>
+                <Field>
+                  <FieldLabel>Tag</FieldLabel>
+                  <Controller
+                    control={form.control}
+                    name="tagIds"
+                    render={({ field }) => <TagPicker value={field.value} onChange={field.onChange} allowCreate placeholder="Aggiungi tag" />}
+                  />
+                </Field>
+              </FieldGroup>
+            </CardContent>
+          </Card>
 
-        <div className="flex flex-col gap-6 self-start">
           <Card>
             <CardHeader>
               <CardTitle>Ingredienti</CardTitle>
@@ -213,43 +213,43 @@ export function RecipeEditorPage() {
               </Button>
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Preparazione</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {steps.fields.length === 0 && <p className="text-muted-foreground py-4 text-center text-sm">Nessun passo.</p>}
-              {steps.fields.map((step, i) => (
-                <div key={step.id} className="grid grid-cols-[1.5rem_minmax(0,1fr)_auto] items-start gap-2">
-                  <span className="text-muted-foreground pt-2 text-right text-sm font-medium tabular-nums">{i + 1}.</span>
-                  <Textarea rows={2} aria-label={`Passo ${i + 1}`} {...form.register(`steps.${i}.text`)} />
-                  <div className="flex">
-                    <Button type="button" variant="ghost" size="icon" disabled={i === 0} onClick={() => steps.move(i, i - 1)} aria-label="Sposta su">
-                      <ArrowUp />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      disabled={i === steps.fields.length - 1}
-                      onClick={() => steps.move(i, i + 1)}
-                      aria-label="Sposta giù"
-                    >
-                      <ArrowDown />
-                    </Button>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => steps.remove(i)} aria-label="Rimuovi">
-                      <Trash2 />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              <Button type="button" variant="outline" className="w-full" onClick={() => steps.append({ text: "" })}>
-                <Plus /> Aggiungi passo
-              </Button>
-            </CardContent>
-          </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Preparazione</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {steps.fields.length === 0 && <p className="text-muted-foreground py-4 text-center text-sm">Nessun passo.</p>}
+            {steps.fields.map((step, i) => (
+              <div key={step.id} className="grid grid-cols-[1.5rem_minmax(0,1fr)_auto] items-start gap-2">
+                <span className="text-muted-foreground pt-2 text-right text-sm font-medium tabular-nums">{i + 1}.</span>
+                <Textarea rows={2} aria-label={`Passo ${i + 1}`} {...form.register(`steps.${i}.text`)} />
+                <div className="flex">
+                  <Button type="button" variant="ghost" size="icon" disabled={i === 0} onClick={() => steps.move(i, i - 1)} aria-label="Sposta su">
+                    <ArrowUp />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    disabled={i === steps.fields.length - 1}
+                    onClick={() => steps.move(i, i + 1)}
+                    aria-label="Sposta giù"
+                  >
+                    <ArrowDown />
+                  </Button>
+                  <Button type="button" variant="ghost" size="icon" onClick={() => steps.remove(i)} aria-label="Rimuovi">
+                    <Trash2 />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            <Button type="button" variant="outline" className="w-full" onClick={() => steps.append({ text: "" })}>
+              <Plus /> Aggiungi passo
+            </Button>
+          </CardContent>
+        </Card>
       </PageBody>
     </form>
   );
