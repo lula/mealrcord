@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { and, eq, gte, lte } from "drizzle-orm";
 import { db, newId } from "@/db/client";
-import { COURSES, plannedMeals, type Course } from "@/db/schema";
-import { courseCoefficient } from "@/features/meals/api";
+import { COURSES, plannedMealCourseCoefficients, plannedMeals, type Course } from "@/db/schema";
 import { useDbMutation } from "@/lib/query";
 import { scaleFactor } from "@/lib/scaling";
 import type { QuantityLine } from "@/lib/units";
@@ -18,9 +17,9 @@ export async function fetchPlanned(from: string, to: string) {
   const rows = await db.query.plannedMeals.findMany({
     where: and(gte(plannedMeals.date, from), lte(plannedMeals.date, to)),
     with: {
+      courseCoefficients: true,
       meal: {
         with: {
-          courseCoefficients: true,
           recipes: {
             orderBy: (mr, { asc }) => [asc(mr.position)],
             with: {
@@ -56,11 +55,19 @@ export type ScaledRecipe = {
   lines: (QuantityLine & { key: string })[];
 };
 
+/** Coefficient of one course: its own if set, else the planned meal's. */
+export function courseCoefficient(
+  entry: { coefficient: number; courseCoefficients: { course: Course; coefficient: number }[] },
+  course: Course,
+): number {
+  return entry.courseCoefficients.find((c) => c.course === course)?.coefficient ?? entry.coefficient;
+}
+
 /** Recipes of a planned meal grouped by course, with quantities for its guests. */
 export function scalePlanned(entry: PlannedEntry): { course: Course; coefficient: number; recipes: ScaledRecipe[] }[] {
   return COURSES.map((course) => ({
     course,
-    coefficient: courseCoefficient(entry.meal, course),
+    coefficient: courseCoefficient(entry, course),
   })).map(({ course, coefficient }) => ({
     course,
     coefficient,
@@ -90,20 +97,28 @@ export type PlannedInput = {
   slot: string;
   mealId: string;
   guests: number;
+  coefficient: number;
+  /** Per-course coefficient; null or missing = use `coefficient`. */
+  courseCoefficients?: Partial<Record<Course, number | null>>;
   notes: string;
 };
 
-export const useSavePlanned = () =>
-  useDbMutation(
-    (p: PlannedInput) => {
-      const { id, ...fields } = p;
-      const values = { ...fields, slot: fields.slot.trim() || "Pranzo", notes: fields.notes.trim() };
-      return id
-        ? db.update(plannedMeals).set(values).where(eq(plannedMeals.id, id)).run()
-        : db.insert(plannedMeals).values({ id: newId(), ...values }).run();
-    },
-    { success: "Planner aggiornato" },
-  );
+export async function savePlanned(p: PlannedInput): Promise<string> {
+  const { id: existingId, courseCoefficients = {}, ...fields } = p;
+  const id = existingId ?? newId();
+  const values = { ...fields, slot: fields.slot.trim() || "Pranzo", notes: fields.notes.trim() };
+  await db.batch([
+    existingId ? db.update(plannedMeals).set(values).where(eq(plannedMeals.id, id)) : db.insert(plannedMeals).values({ id, ...values }),
+    db.delete(plannedMealCourseCoefficients).where(eq(plannedMealCourseCoefficients.plannedMealId, id)),
+    ...COURSES.flatMap((course) => {
+      const coefficient = courseCoefficients[course];
+      return coefficient == null ? [] : [db.insert(plannedMealCourseCoefficients).values({ plannedMealId: id, course, coefficient })];
+    }),
+  ]);
+  return id;
+}
+
+export const useSavePlanned = () => useDbMutation(savePlanned, { success: "Planner aggiornato" });
 
 export const useDeletePlanned = () =>
   useDbMutation((id: string) => db.delete(plannedMeals).where(eq(plannedMeals.id, id)).run(), {

@@ -74,7 +74,6 @@ export const meals = sqliteTable("meals", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   notes: text("notes").notNull().default(""),
-  coefficient: real("coefficient").notNull().default(1),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
@@ -90,26 +89,28 @@ export const mealRecipes = sqliteTable(
   (t) => [primaryKey({ columns: [t.mealId, t.recipeId, t.course] })],
 );
 
-/** Per-course override of the meal coefficient. No row = use the meal's. */
-export const mealCourseCoefficients = sqliteTable(
-  "meal_course_coefficients",
-  {
-    mealId: text("meal_id").notNull().references(() => meals.id),
-    course: text("course", { enum: COURSES }).notNull(),
-    coefficient: real("coefficient").notNull(),
-  },
-  (t) => [primaryKey({ columns: [t.mealId, t.course] })],
-);
-
 export const plannedMeals = sqliteTable("planned_meals", {
   id: text("id").primaryKey(),
   date: text("date").notNull(), // yyyy-MM-dd
   slot: text("slot").notNull().default("Pranzo"),
   mealId: text("meal_id").notNull().references(() => meals.id),
   guests: integer("guests").notNull(),
+  /** Quantity coefficient (e.g. 0.7 when there are many courses). */
+  coefficient: real("coefficient").notNull().default(1),
   notes: text("notes").notNull().default(""),
   position: integer("position").notNull().default(0),
 });
+
+/** Per-course override of the planned meal coefficient. No row = use the planned meal's. */
+export const plannedMealCourseCoefficients = sqliteTable(
+  "planned_meal_course_coefficients",
+  {
+    plannedMealId: text("planned_meal_id").notNull().references(() => plannedMeals.id),
+    course: text("course", { enum: COURSES }).notNull(),
+    coefficient: real("coefficient").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.plannedMealId, t.course] })],
+);
 
 export const unitsRelations = relations(units, () => ({}));
 
@@ -146,12 +147,7 @@ export const recipeTagsRelations = relations(recipeTags, ({ one }) => ({
 
 export const mealsRelations = relations(meals, ({ many }) => ({
   recipes: many(mealRecipes),
-  courseCoefficients: many(mealCourseCoefficients),
   planned: many(plannedMeals),
-}));
-
-export const mealCourseCoefficientsRelations = relations(mealCourseCoefficients, ({ one }) => ({
-  meal: one(meals, { fields: [mealCourseCoefficients.mealId], references: [meals.id] }),
 }));
 
 export const mealRecipesRelations = relations(mealRecipes, ({ one }) => ({
@@ -159,8 +155,13 @@ export const mealRecipesRelations = relations(mealRecipes, ({ one }) => ({
   recipe: one(recipes, { fields: [mealRecipes.recipeId], references: [recipes.id] }),
 }));
 
-export const plannedMealsRelations = relations(plannedMeals, ({ one }) => ({
+export const plannedMealsRelations = relations(plannedMeals, ({ one, many }) => ({
   meal: one(meals, { fields: [plannedMeals.mealId], references: [meals.id] }),
+  courseCoefficients: many(plannedMealCourseCoefficients),
+}));
+
+export const plannedMealCourseCoefficientsRelations = relations(plannedMealCourseCoefficients, ({ one }) => ({
+  plannedMeal: one(plannedMeals, { fields: [plannedMealCourseCoefficients.plannedMealId], references: [plannedMeals.id] }),
 }));
 
 export type Unit = typeof units.$inferSelect;

@@ -43,9 +43,7 @@ async function seed() {
   const meal = await saveMeal({
     name: "Menu del giorno",
     notes: "",
-    coefficient: 0.8,
     courses: { starter: [], first: [pasta], main: [], dessert: [cake] },
-    courseCoefficients: { dessert: 0.5 },
   });
   return { flour, eggs, pasta, cake, meal };
 }
@@ -80,7 +78,7 @@ describe("data layer", () => {
   });
 
   it("rejects a meal with no recipes", async () => {
-    await expect(saveMeal({ name: "Vuoto", notes: "", coefficient: 1, courses: { starter: [], first: [], main: [], dessert: [] } })).rejects.toThrow(/almeno una ricetta/);
+    await expect(saveMeal({ name: "Vuoto", notes: "", courses: { starter: [], first: [], main: [], dessert: [] } })).rejects.toThrow(/almeno una ricetta/);
   });
 
   it("reports where recipes and meals are used", async () => {
@@ -92,11 +90,13 @@ describe("data layer", () => {
 
   it("scales planned meals to guests and builds the shopping list", async () => {
     const { meal } = await seed();
-    await db.insert(plannedMeals).values([
-      { id: "p1", date: "2026-11-02", slot: "Cena", mealId: meal, guests: 40 },
-      { id: "p2", date: "2026-11-02", slot: "Pranzo", mealId: meal, guests: 20 },
-      { id: "p3", date: "2026-11-20", slot: "Pranzo", mealId: meal, guests: 99 }, // outside range
-    ]).run();
+    // Dessert overrides the planned coefficient (0.8) with its own (0.5).
+    const plan = { mealId: meal, coefficient: 0.8, courseCoefficients: { dessert: 0.5 }, notes: "" };
+    await plannerApi.savePlanned({ ...plan, date: "2026-11-02", slot: "Cena", guests: 40 });
+    const pranzo = await plannerApi.savePlanned({ ...plan, date: "2026-11-02", slot: "Pranzo", guests: 10, courseCoefficients: {} });
+    // Editing replaces the overrides.
+    await plannerApi.savePlanned({ ...plan, id: pranzo, date: "2026-11-02", slot: "Pranzo", guests: 20 });
+    await plannerApi.savePlanned({ ...plan, date: "2026-11-20", slot: "Pranzo", guests: 99 }); // outside range
 
     const entries = await plannerApi.fetchPlanned("2026-11-02", "2026-11-08");
 

@@ -23,6 +23,7 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { formatNumber } from "@/lib/units";
 import { cn } from "@/lib/utils";
 import { useDeletePlanned, usePlanned, type PlannedEntry } from "./api";
 import { PlannedDetail } from "./planned-detail";
@@ -148,7 +149,7 @@ export function PlannerPage() {
                   {selected.slot} · {selected.meal.name}
                 </SheetTitle>
                 <SheetDescription className="capitalize">
-                  {format(parseISO(selected.date), "EEEE d MMMM")} · {selected.guests} coperti
+                  {format(parseISO(selected.date), "EEEE d MMMM")} · {selected.guests} coperti{selected.coefficient !== 1 && ` · ×${formatNumber(selected.coefficient)}`}
                 </SheetDescription>
               </SheetHeader>
               <div className="px-4">
@@ -341,6 +342,7 @@ function DayView({ entries, onAdd, onEdit }: { entries: PlannedEntry[]; onAdd: (
               <Badge variant="secondary">
                 <Users /> {e.guests} coperti
               </Badge>
+              {e.coefficient !== 1 && <Badge variant="outline">×{formatNumber(e.coefficient)}</Badge>}
               {e.notes}
             </CardDescription>
             <CardAction className="flex gap-1">

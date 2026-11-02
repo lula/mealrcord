@@ -3,13 +3,11 @@ import { Edit2, Plus, Trash2, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { PageBody, PageHeader } from "@/components/page";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { COURSES } from "@/db/schema";
-import { formatNumber } from "@/lib/units";
 import { COURSE_LABELS, plannedUsageCount, useDeleteMeal, useMeals, type MealListItem } from "./api";
 
 export function MealsPage() {
@@ -68,17 +66,10 @@ export function MealsPage() {
                     </Link>
                   </CardTitle>
                   <CardDescription>
-                    {m.coefficient !== 1 || m.courseCoefficients.length > 0 ? (
-                      <Badge variant="outline">
-                        Coefficiente ×{formatNumber(m.coefficient)}
-                        {m.courseCoefficients.length > 0 && " (varia per portata)"}
-                      </Badge>
-                    ) : (
-                      m.notes || " "
-                    )}
+                    {m.notes || " "}
                   </CardDescription>
                   <CardAction>
-                    <Button variant="ghost" size="icon" aria-label="Modifica" asChild>
+                    <Button variant="ghost" size="icon" aria-label="Elimina" asChild>
                       <Link to="/meals/$mealId" params={{ mealId: m.id }} className="hover:underline">
                         <Edit2 />
                       </Link>

@@ -17,6 +17,7 @@ export async function exportJson(path: string) {
     meals: await db.select().from(s.meals),
     mealRecipes: await db.select().from(s.mealRecipes),
     plannedMeals: await db.select().from(s.plannedMeals),
+    plannedMealCourseCoefficients: await db.select().from(s.plannedMealCourseCoefficients),
   };
   await invoke("save_text_file", { path, contents: JSON.stringify(data, null, 2) });
 }
