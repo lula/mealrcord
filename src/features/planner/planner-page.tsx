@@ -170,12 +170,12 @@ function EntryActions({ entry, onEdit, onDeleted }: { entry: PlannedEntry; onEdi
   const del = useDeletePlanned();
   return (
     <>
-      <Button variant="outline" onClick={onEdit}>
+      <Button variant="outline" size="sm" onClick={onEdit}>
         <Pencil /> Modifica
       </Button>
       <ConfirmDialog
         trigger={
-          <Button variant="destructive">
+          <Button variant="destructive" size="sm">
             <Trash2 /> Rimuovi
           </Button>
         }

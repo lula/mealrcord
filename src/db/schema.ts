@@ -27,7 +27,7 @@ export const recipes = sqliteTable("recipes", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description").notNull().default(""),
-  baseServings: integer("base_servings").notNull().default(4),
+  baseServings: integer("base_servings").notNull().default(2),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });

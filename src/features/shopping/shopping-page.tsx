@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { addWeeks, endOfWeek, format, parseISO, startOfWeek } from "date-fns";
 import type { DateRange } from "react-day-picker";
-import { CalendarIcon, Copy, Printer, ShoppingCart } from "lucide-react";
+import { CalendarIcon, Copy, Share2, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { PageBody, PageHeader } from "@/components/page";
 import { Button } from "@/components/ui/button";
@@ -63,8 +63,11 @@ export function ShoppingPage() {
             >
               <Copy /> Copia
             </Button>
-            <Button variant="outline" disabled={!lines.length} onClick={() => window.print()}>
+            {/* <Button variant="outline" disabled={!lines.length} onClick={() => window.print()}>
               <Printer /> Stampa
+            </Button> */}
+            <Button variant="outline" disabled={!lines.length}>
+              <Share2  /> Condividi
             </Button>
           </>
         }

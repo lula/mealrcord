@@ -24,6 +24,8 @@ export type AggregatedLine = {
 };
 
 export const QB_UNIT_ID = "unit-qb";
+/** Unit used when none is chosen. */
+export const DEFAULT_UNIT_ID = "unit-g";
 
 /** Units shown for summed quantities, smallest first. */
 const DISPLAY_UNITS: Record<Exclude<Dimension, "other">, UnitLike[]> = {

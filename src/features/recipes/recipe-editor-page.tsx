@@ -14,9 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { IngredientCombobox } from "@/features/ingredients/ingredient-combobox";
 import { TagPicker } from "@/features/tags/tag-picker";
 import { UnitSelect } from "@/features/units/unit-select";
+import { DEFAULT_UNIT_ID } from "@/lib/units";
 import { useRecipe, useSaveRecipe, type RecipeDetail } from "./api";
-
-const DEFAULT_UNIT_ID = "unit-g";
 
 const schema = z.object({
   name: z.string().trim().min(1, "Inserisci un nome"),
@@ -35,7 +34,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-const EMPTY: FormValues = { name: "", description: "", baseServings: 4, ingredients: [], steps: [], tagIds: [] };
+const EMPTY: FormValues = { name: "", description: "", baseServings: 2, ingredients: [], steps: [], tagIds: [] };
 
 function toForm(r: RecipeDetail): FormValues {
   return {

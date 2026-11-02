@@ -21,7 +21,7 @@ import { useDeleteIngredient, useIngredients, useUpdateIngredient } from "@/feat
 import { useCreateTag, useDeleteTag, useTags } from "@/features/tags/api";
 import { DIMENSION_LABELS, useCreateUnit, useDeleteUnit, useUnits } from "@/features/units/api";
 import { UnitSelect } from "@/features/units/unit-select";
-import { formatNumber } from "@/lib/units";
+import { DEFAULT_UNIT_ID, formatNumber } from "@/lib/units";
 import { exportJson } from "./backup";
 
 export function SettingsPage() {
@@ -88,7 +88,7 @@ function IngredientsTab() {
             {ingredients.map((i) => (
               <TableRow key={i.id}>
                 <TableCell className="font-medium">{i.name}</TableCell>
-                <TableCell>{i.defaultUnitId ? unitSymbol.get(i.defaultUnitId) : "—"}</TableCell>
+                <TableCell>{unitSymbol.get(i.defaultUnitId ?? DEFAULT_UNIT_ID)}</TableCell>
                 <TableCell className="text-right tabular-nums">{i.usage}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon-sm" aria-label="Modifica" onClick={() => setEditing(i)}>
@@ -142,7 +142,7 @@ function IngredientDialog({ value, onClose }: { value: { id: string; name: strin
               </Field>
               <Field>
                 <FieldLabel>Unità predefinita</FieldLabel>
-                <UnitSelect value={draft.defaultUnitId ?? ""} onChange={(id) => setDraft({ ...draft, defaultUnitId: id })} className="w-40" />
+                <UnitSelect value={draft.defaultUnitId ?? DEFAULT_UNIT_ID} onChange={(id) => setDraft({ ...draft, defaultUnitId: id })} className="w-40" />
               </Field>
             </FieldGroup>
           )}

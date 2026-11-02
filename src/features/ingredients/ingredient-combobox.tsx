@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { DEFAULT_UNIT_ID } from "@/lib/units";
 import { useDbMutation } from "@/lib/query";
 import { createIngredient, useIngredients } from "./api";
 
@@ -62,7 +63,7 @@ export function IngredientCombobox({
                   value={`__create ${trimmed}`}
                   onSelect={async () => {
                     const id = await create.mutateAsync({ name: trimmed });
-                    onChange(id, null);
+                    onChange(id, DEFAULT_UNIT_ID);
                     setOpen(false);
                   }}
                 >
