@@ -1,5 +1,5 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { BookOpen, CalendarDays, CookingPot, Moon, Settings, ShoppingCart, Sun, UtensilsCrossed } from "lucide-react";
+import { BookOpen, CalendarDays, CookingPot, Moon, PanelLeftIcon, Settings, ShoppingCart, Sun, UtensilsCrossed } from "lucide-react";
 import appIcon from "@/assets/app-icon.svg";
 import { useNavCounts } from "@/components/nav-counts";
 import { useTheme } from "@/components/theme";
@@ -16,6 +16,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 const NAV = [
@@ -75,6 +77,9 @@ export function AppLayout() {
                 <span>{dark ? "Tema chiaro" : "Tema scuro"}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
+            <SidebarMenuItem>
+              <ToggleSidebarButton />
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
@@ -83,4 +88,12 @@ export function AppLayout() {
       </SidebarInset>
     </SidebarProvider>
   );
+}
+
+function ToggleSidebarButton() {
+  const { toggleSidebar } = useSidebar()
+  return <SidebarMenuButton className="text-nowrap" onClick={() => toggleSidebar()} tooltip="Mostra menu">
+    <PanelLeftIcon />
+    Nascondi menu
+  </SidebarMenuButton>
 }

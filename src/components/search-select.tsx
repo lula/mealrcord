@@ -51,7 +51,7 @@ export function SearchSelect({
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-0" align="start">
+      <PopoverContent className="w-fit max-w-100 p-0" align="start">
         {/* Filtering is done here so the list can be capped at MAX_RESULTS. */}
         <Command shouldFilter={false}>
           <CommandInput placeholder={searchPlaceholder} value={search} onValueChange={setSearch} />

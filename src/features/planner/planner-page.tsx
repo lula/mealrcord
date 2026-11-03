@@ -37,6 +37,7 @@ import {
   Plus,
   ShoppingCart,
   Trash2,
+  TriangleAlert,
   Users,
   X,
 } from "lucide-react";
@@ -65,7 +66,8 @@ import { toPlainText } from "@/lib/rich-text";
 import { cn } from "@/lib/utils";
 import { useMeals } from "@/features/meals/api";
 import { MealFilter } from "@/features/meals/meal-filter";
-import { useCopyPlanned, useDeletePlanned, useMovePlanned, usePlanned, usePlannedForMeal, type PlannedEntry } from "./api";
+import { useSettings } from "@/features/settings/api";
+import { plannedExceedsGuests, useCopyPlanned, useDeletePlanned, useMovePlanned, usePlanned, usePlannedForMeal, type PlannedEntry } from "./api";
 import { PlannedDetail, PlannedQuantities } from "./planned-detail";
 
 export type PlannerView = "month" | "week" | "day";
@@ -196,8 +198,9 @@ export function PlannerPage() {
           {selected && (
             <>
               <SheetHeader>
-                <SheetTitle>
+                <SheetTitle className="flex items-center gap-2">
                   {selected.slot} · {selected.meal.name}
+                  <GuestsWarning entry={selected} className="size-4" />
                 </SheetTitle>
                 <SheetDescription className="capitalize">
                   {format(parseISO(selected.date), "EEEE d MMMM")} · {selected.guests} coperti
@@ -281,9 +284,19 @@ type GridProps = {
   onSelect: (id: string) => void;
 };
 
+/** Warning icon when a course or the "piatti unici" go over the guests limit set in the settings. */
+function GuestsWarning({ entry, className }: { entry: PlannedEntry; className?: string }) {
+  const { data: settings } = useSettings();
+  const percent = settings?.guestsWarningPercent ?? 20;
+  if (!plannedExceedsGuests(entry, percent)) return null;
+  const label = `Coperti di una portata oltre il ${percent}% in più`;
+  return <TriangleAlert role="img" aria-label={label} className={cn("size-3.5 shrink-0 text-amber-600 dark:text-amber-500", className)} />;
+}
+
 function ChipBody({ entry, compact }: { entry: PlannedEntry; compact?: boolean }) {
   return compact ? (
     <>
+      <GuestsWarning entry={entry} className="mr-1 inline size-3 align-[-2px]" />
       <span className="font-medium">{entry.slot}</span> · {entry.meal.name}
     </>
   ) : (
@@ -291,6 +304,7 @@ function ChipBody({ entry, compact }: { entry: PlannedEntry; compact?: boolean }
       <div className="text-muted-foreground flex items-center justify-between text-xs">
         <span>{entry.slot}</span>
         <span className="flex items-center gap-1 tabular-nums">
+          <GuestsWarning entry={entry} className="size-3" />
           <Users className="size-3" />
           {entry.guests}
         </span>
@@ -562,8 +576,9 @@ function DayView({ entries, onAdd, onEdit }: { entries: PlannedEntry[]; onAdd: (
       {entries.map((e) => (
         <Card key={e.id}>
           <CardHeader>
-            <CardTitle>
+            <CardTitle className="flex items-center gap-2">
               {e.slot} · {e.meal.name}
+              <GuestsWarning entry={e} className="size-4" />
             </CardTitle>
             <CardDescription className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary">
@@ -642,6 +657,7 @@ function MealOccurrences({ entries, onSelect, onAdd }: { entries: PlannedEntry[]
                         </ItemDescription>
                       </ItemContent>
                       <ItemActions>
+                        <GuestsWarning entry={e} className="size-4" />
                         <Badge variant="secondary">
                           <Users /> {e.guests}
                         </Badge>

@@ -261,6 +261,15 @@ export function scalePlannedDishes(entry: ScalableEntry): { coefficient: number;
   };
 }
 
+/** True when a course or the "piatti unici" of a planned meal go over its guests by more than `percent`. */
+export function plannedExceedsGuests(entry: ScalableEntry, percent: number): boolean {
+  const totals = [
+    ...scalePlanned(entry).map((c) => c.recipes.reduce((n, r) => n + r.guests, 0)),
+    ...(scalePlannedDishes(entry) ? [scalePlannedDishes(entry)!.dishes.reduce((n, d) => n + d.guests, 0)] : []),
+  ];
+  return totals.some((t) => exceedsGuests(t, entry.guests, percent));
+}
+
 /** Every ingredient line of a planned meal: course recipes and "piatti unici". */
 export function plannedLines(entry: ScalableEntry): QuantityLine[] {
   return [
