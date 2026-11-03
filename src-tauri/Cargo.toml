@@ -1,6 +1,6 @@
 [package]
 name = "mealrcord"
-version = "0.1.1"
+version = "0.1.2"
 description = "Ricette, pasti e planner"
 authors = ["Luca Lulani"]
 edition = "2024"
