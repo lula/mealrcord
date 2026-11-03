@@ -177,7 +177,7 @@ describe("data layer", () => {
     const { saveSetting } = await import("@/features/settings/api");
 
     // At most N recipes (default 3), at least one.
-    await expect(saveDish({ name: "Vuoto", notes: "", recipes: [] })).rejects.toThrow(/almeno una ricetta/);
+    await expect(saveDish({ name: "Vuoto", notes: "", recipes: [] })).rejects.toThrow(/almeno due ricette/);
     await saveSetting("maxDishRecipes", 1);
     await expect(
       saveDish({ name: "Troppe", notes: "", recipes: [{ recipeId: pasta, coefficient: 1 }, { recipeId: cake, coefficient: 1 }] }),
