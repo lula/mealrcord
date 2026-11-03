@@ -15,9 +15,7 @@ import {
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
-  useSidebar,
+  SidebarProvider, useSidebar
 } from "@/components/ui/sidebar";
 
 const NAV = [

@@ -30,7 +30,6 @@ export function DishesPage() {
   const del = useDeleteDish();
   const [search, setSearch] = useState("");
   const [toDelete, setToDelete] = useState<DishListItem | null>(null);
-  const [viewing, setViewing] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();

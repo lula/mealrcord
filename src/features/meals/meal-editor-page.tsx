@@ -271,7 +271,6 @@ export function MealEditorPage() {
                               <Link to="." className="hover:text-primary block truncate hover:underline" onClick={() => setViewingDish(id)}>
                                 {dish?.name ?? "…"}
                               </Link>
-                              {/* {dish && <div className="text-muted-foreground truncate text-xs">{dish.recipes.map((r) => r.recipe.name).join(" · ")}</div>} */}
                             </div>
                             {!locked && (
                               <>
