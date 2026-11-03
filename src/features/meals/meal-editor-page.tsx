@@ -3,7 +3,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { ArrowDown, ArrowLeft, ArrowUp, Copy, Lock, Plus, RotateCcw, Save, X } from "lucide-react";
+import { ArrowLeft, Copy, Lock, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { PageBody, PageHeader } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,7 @@ import { useDishes } from "@/features/dishes/api";
 import { DishPicker } from "@/features/dishes/dish-picker";
 import { RecipePicker } from "./recipe-picker";
 import { COURSE_LABELS, COURSE_TAG_ID, useDuplicateMeal, useMeal, useSaveMeal } from "./api";
+import { DishDetailDialog } from "../dishes/dish-detail-dialog";
 
 const courses = z.object({
   starter: z.array(z.string()),
@@ -53,6 +54,7 @@ export function MealEditorPage() {
   const navigate = useNavigate();
   const [picking, setPicking] = useState<Course | null>(null);
   const [viewing, setViewing] = useState<string | null>(null);
+  const [viewingDish, setViewingDish] = useState<string | null>(null);
   const [pickingDishes, setPickingDishes] = useState(false);
   const { data: allDishes = [] } = useDishes();
   const dishById = useMemo(() => new Map(allDishes.map((d) => [d.id, d])), [allDishes]);
@@ -185,11 +187,6 @@ export function MealEditorPage() {
               name={`courses.${course}`}
               render={({ field }) => {
                 const ids: string[] = field.value;
-                const move = (from: number, to: number) => {
-                  const next = [...ids];
-                  next.splice(to, 0, next.splice(from, 1)[0]);
-                  field.onChange(next);
-                };
                 return (
                   <Card size="sm">
                     <CardHeader>
@@ -216,21 +213,8 @@ export function MealEditorPage() {
                             </button>
                             {!locked && (
                               <>
-                                <Button type="button" variant="ghost" size="icon-sm" disabled={i === 0} onClick={() => move(i, i - 1)} aria-label="Sposta su">
-                                  <ArrowUp />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon-sm"
-                                  disabled={i === ids.length - 1}
-                                  onClick={() => move(i, i + 1)}
-                                  aria-label="Sposta giù"
-                                >
-                                  <ArrowDown />
-                                </Button>
                                 <Button type="button" variant="ghost" size="icon-sm" onClick={() => field.onChange(ids.filter((x) => x !== id))} aria-label="Rimuovi">
-                                  <X />
+                                  <Trash2 />
                                 </Button>
                               </>
                             )}
@@ -264,11 +248,6 @@ export function MealEditorPage() {
             name="dishIds"
             render={({ field }) => {
               const ids: string[] = field.value;
-              const move = (from: number, to: number) => {
-                const next = [...ids];
-                next.splice(to, 0, next.splice(from, 1)[0]);
-                field.onChange(next);
-              };
               return (
                 <Card size="sm">
                   <CardHeader>
@@ -289,28 +268,15 @@ export function MealEditorPage() {
                         return (
                           <div key={id} className="bg-muted/50 flex items-center gap-1 rounded-md py-1 pr-1 pl-3 text-sm">
                             <div className="min-w-0 flex-1">
-                              <Link to="/dishes/$dishId" params={{ dishId: id }} className="hover:text-primary block truncate hover:underline">
+                              <Link to="." className="hover:text-primary block truncate hover:underline" onClick={() => setViewingDish(id)}>
                                 {dish?.name ?? "…"}
                               </Link>
-                              {dish && <div className="text-muted-foreground truncate text-xs">{dish.recipes.map((r) => r.recipe.name).join(" · ")}</div>}
+                              {/* {dish && <div className="text-muted-foreground truncate text-xs">{dish.recipes.map((r) => r.recipe.name).join(" · ")}</div>} */}
                             </div>
                             {!locked && (
                               <>
-                                <Button type="button" variant="ghost" size="icon-sm" disabled={i === 0} onClick={() => move(i, i - 1)} aria-label="Sposta su">
-                                  <ArrowUp />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon-sm"
-                                  disabled={i === ids.length - 1}
-                                  onClick={() => move(i, i + 1)}
-                                  aria-label="Sposta giù"
-                                >
-                                  <ArrowDown />
-                                </Button>
                                 <Button type="button" variant="ghost" size="icon-sm" onClick={() => field.onChange(ids.filter((x) => x !== id))} aria-label="Rimuovi">
-                                  <X />
+                                  <Trash2 />
                                 </Button>
                               </>
                             )}
@@ -335,6 +301,7 @@ export function MealEditorPage() {
         </div>
       </PageBody>
       <RecipeDetailDialog recipeId={viewing} onClose={() => setViewing(null)} />
+      <DishDetailDialog dishId={viewingDish} onClose={() => setViewingDish(null)} />
     </form>
   );
 }

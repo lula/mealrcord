@@ -18,7 +18,6 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { RecipeDetailDialog } from "@/features/recipes/recipe-detail-dialog";
 import { TagBadges } from "@/features/tags/tag-picker";
 import { toPlainText } from "@/lib/rich-text";
 import { formatNumber } from "@/lib/units";
@@ -137,35 +136,30 @@ export function DishesPage() {
                       </DropdownMenu>
                     </CardAction>
                   </CardHeader>
-                  <CardContent>
-                    <ul className="divide-y rounded-md border text-sm">
-                      {d.recipes.map((r) => (
-                        <li key={r.recipeId} className="space-y-1 px-3 py-1.5">
-                          <div className="flex items-center justify-between gap-2">
-                            <button
-                              type="button"
-                              className="hover:text-primary min-w-0 cursor-pointer truncate text-left hover:underline"
-                              onClick={() => setViewing(r.recipeId)}
-                            >
-                              {r.recipe.name}
-                            </button>
-                            <span className="text-muted-foreground text-xs tabular-nums">×{formatNumber(r.coefficient)}</span>
-                          </div>
+                  <CardContent className="space-y-4 text-sm h-full">
+                    {d.recipes.map((r) => (
+                      <div key={r.recipeId}>
+                        <div className="text-muted-foreground text-xs font-medium uppercase flex items-center gap-2">
+                          {r.recipe.name}
+                          <span className="text-muted-foreground text-xs tabular-nums">×{formatNumber(r.coefficient)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
                           {r.recipe.tags.length > 0 && <TagBadges tags={r.recipe.tags.map((t) => t.tag)} />}
-                        </li>
-                      ))}
-                    </ul>
+                        </div>
+                      </div>
+                    ))}
                   </CardContent>
                 </Card>
               ))}
             </div>
           </>
         )}
-      </PageBody>
+      </PageBody >
 
-      <RecipeDetailDialog recipeId={viewing} onClose={() => setViewing(null)} />
+      {/* <RecipeDetailDialog recipeId={viewing} onClose={() => setViewing(null)} /> */}
 
-      <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
+      < AlertDialog open={!!toDelete
+      } onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminare «{toDelete?.name}»?</AlertDialogTitle>
@@ -178,7 +172,7 @@ export function DishesPage() {
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+      </AlertDialog >
     </>
   );
 }

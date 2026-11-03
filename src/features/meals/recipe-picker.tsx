@@ -89,7 +89,7 @@ export function RecipePicker({
                     <span className="block truncate text-sm font-medium">{r.name}</span>
                     <span className="text-muted-foreground text-xs">{reason ?? `${r.baseServings} persone`}</span>
                   </span>
-                  <TagBadges tags={r.tags.map((t) => t.tag)} />
+                  {/* <TagBadges tags={r.tags.map((t) => t.tag)} /> */}
                 </button>
               );
             })}

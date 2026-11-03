@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { COURSES } from "@/db/schema";
 import { toPlainText } from "@/lib/rich-text";
-import { RecipeDetailDialog } from "@/features/recipes/recipe-detail-dialog";
 import { COURSE_LABELS, plannedUsageCount, useDeleteMeal, useDuplicateMeal, useMeals, useRemoveFromPlanner, type MealListItem } from "./api";
 import { format } from "date-fns";
 
@@ -202,22 +201,22 @@ export function MealsPage() {
                       // if (!items.length) return null;
                       return (
                         <div key={c}>
-                          <div className="text-muted-foreground text-xs font-medium uppercase">{COURSE_LABELS[c]} ({items?.length ?? 0})</div>
+                          <div className="text-muted-foreground text-xs font-medium uppercase flex items-center gap-2">
+                            {COURSE_LABELS[c]}
+                            <Badge variant="secondary" className="text-muted-foreground">
+                              {items?.length ?? 0}
+                            </Badge>
+                          </div>
                         </div>
                       );
                     })}
-                    {m.dishes.length > 0 && (
+                    {(
                       <div>
-                        <div className="text-muted-foreground text-xs font-medium uppercase">Piatti unici</div>
-                        <div>
-                          {m.dishes.map((d, i) => (
-                            <span key={d.dishId}>
-                              {i > 0 && " · "}
-                              <Link to="/dishes/$dishId" params={{ dishId: d.dishId }} className="hover:text-primary hover:underline">
-                                {d.dish.name}
-                              </Link>
-                            </span>
-                          ))}
+                        <div className="text-muted-foreground text-xs font-medium uppercase flex items-center gap-2">
+                          Piatti unici
+                          <Badge variant="secondary" className="text-muted-foreground">
+                            {m.dishes?.length ?? 0}
+                          </Badge>
                         </div>
                       </div>
                     )}
@@ -240,7 +239,7 @@ export function MealsPage() {
         )}
       </PageBody>
 
-      <RecipeDetailDialog recipeId={viewing} onClose={() => setViewing(null)} />
+      {/* <RecipeDetailDialog recipeId={viewing} onClose={() => setViewing(null)} /> */}
 
       <AlertDialog open={!!toUnplan} onOpenChange={(o) => !o && setToUnplan(null)}>
         <AlertDialogContent>
