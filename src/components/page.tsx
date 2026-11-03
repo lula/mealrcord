@@ -1,6 +1,4 @@
 import type { ReactNode } from "react";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
 
 export function PageHeader({ title, description, actions }: { title: ReactNode; description?: ReactNode; actions?: ReactNode }) {
   return (
@@ -8,7 +6,7 @@ export function PageHeader({ title, description, actions }: { title: ReactNode; 
       {/* <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="h-5 data-vertical:self-center" /> */}
       <div className="min-w-0 flex-1">
-        <h1 className="truncate text-base font-semibold">{title}</h1>
+        <h1 className="truncate text-lg font-semibold">{title}</h1>
         {description && <p className="text-muted-foreground truncate text-xs">{description}</p>}
       </div>
       {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}

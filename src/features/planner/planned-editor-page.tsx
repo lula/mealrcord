@@ -2,7 +2,7 @@ import { useEffect, useReducer, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { eachDayOfInterval, endOfWeek, format, parseISO, startOfToday, startOfWeek } from "date-fns";
+import { eachDayOfInterval, endOfWeek, format, parseISO, startOfToday, startOfTomorrow, startOfWeek } from "date-fns";
 import { Link, useCanGoBack, useNavigate, useParams, useRouter, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, CalendarIcon, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -304,7 +304,7 @@ export function PlannedEditorPage() {
                             mode="single"
                             selected={field.value ? parseISO(field.value) : undefined}
                             defaultMonth={field.value ? parseISO(field.value) : undefined}
-                            disabled={entry ? undefined : { before: startOfToday() }}
+                            disabled={entry ? undefined : { before: startOfTomorrow() }}
                             onSelect={(d) => {
                               if (d) field.onChange(format(d, "yyyy-MM-dd"));
                               setCalendarOpen(false);
@@ -322,7 +322,7 @@ export function PlannedEditorPage() {
                     <ToggleGroup type="multiple" variant="outline" className="grid w-full grid-cols-7" value={days} onValueChange={setDays}>
                       {week.map((d) => {
                         const taken = isTaken(d, mealId);
-                        const past = d < today;
+                        const past = d <= today;
                         return (
                           <ToggleGroupItem
                             key={d}

@@ -23,7 +23,9 @@ import {
   isToday,
   parseISO,
   startOfMonth,
-  startOfWeek,
+  startOfToday,
+  startOfTomorrow,
+  startOfWeek
 } from "date-fns";
 import {
   CalendarDays,
@@ -40,6 +42,7 @@ import {
   TriangleAlert,
   Users,
   X,
+  ArrowLeft,
 } from "lucide-react";
 import { PageBody, PageHeader } from "@/components/page";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -133,7 +136,8 @@ export function PlannerPage() {
   return (
     <>
       <PageHeader
-        title={mealFilter ? (filteredMeal?.name ?? "Menu") : <span className="capitalize">{titleFor(view, anchor)}</span>}
+        title={mealFilter ? (filteredMeal?.name ?? "Menu") : <span className="capitalize">Planner</span>}
+        description={titleFor(view, anchor)}
         actions={
           <>
             {!mealFilter && (
@@ -165,8 +169,8 @@ export function PlannerPage() {
         )}
         <MealFilter value={mealFilter} onChange={(meal) => go({ meal })} />
         {mealFilter ? (
-          <Button variant="ghost" size="sm" className="ml-auto" onClick={() => go({ meal: undefined })}>
-            <X /> Torna al calendario
+          <Button variant="outline" size="sm" className="ml-auto" onClick={() => go({ meal: undefined })}>
+            <ArrowLeft /> Torna al calendario
           </Button>
         ) : (
           <ToggleGroup type="single" variant="outline" size="sm" className="ml-auto" value={view} onValueChange={(v) => v && go({ view: v as PlannerView })}>
@@ -392,6 +396,7 @@ const EntryMenuContext = createContext<EntryMenuActions | null>(null);
 function EntryContextMenu({ entry, children }: { entry: PlannedEntry; children: React.ReactNode }) {
   const actions = useContext(EntryMenuContext);
   if (!actions) return children;
+  const d = new Date(entry.date)
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
@@ -403,12 +408,12 @@ function EntryContextMenu({ entry, children }: { entry: PlannedEntry; children: 
         <ContextMenuItem onSelect={() => actions.open(entry)}>
           <Eye /> Apri dettaglio
         </ContextMenuItem>
-        <ContextMenuItem onSelect={() => actions.edit(entry)}>
+        {d >= startOfTomorrow() && <ContextMenuItem onSelect={() => actions.edit(entry)}>
           <Pencil /> Modifica pianificazione
-        </ContextMenuItem>
-        <ContextMenuItem onSelect={() => actions.copyToNextDay(entry)}>
+        </ContextMenuItem>}
+        {d >= startOfToday() && <ContextMenuItem onSelect={() => actions.copyToNextDay(entry)}>
           <CopyPlus /> Copia al giorno dopo
-        </ContextMenuItem>
+        </ContextMenuItem>}
         <ContextMenuSeparator />
         <ContextMenuItem onSelect={() => actions.showMealDates(entry)}>
           <CalendarDays /> Tutte le date del menu
@@ -418,10 +423,13 @@ function EntryContextMenu({ entry, children }: { entry: PlannedEntry; children: 
             <UtensilsCrossed /> Apri il menu
           </Link>
         </ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem variant="destructive" onSelect={() => actions.remove(entry)}>
-          <Trash2 /> Rimuovi dal planner
-        </ContextMenuItem>
+        {d >= startOfTomorrow() && (<>
+          <ContextMenuSeparator />
+          <ContextMenuItem variant="destructive" onSelect={() => actions.remove(entry)}>
+            <Trash2 /> Rimuovi dal planner
+          </ContextMenuItem>
+        </>
+        )}
       </ContextMenuContent>
     </ContextMenu>
   );
@@ -483,8 +491,8 @@ function WeekView({ days, byDate, onOpenDay, onAdd, onSelect }: GridProps) {
                   {format(d, "d")}
                 </span>
               </button>
-              <Button variant="ghost" size="icon-xs" onClick={() => onAdd(key)} aria-label="Aggiungi" className="opacity-60 group-hover:opacity-100">
-                <Plus />
+              <Button variant="ghost" size="icon-xs" disabled={d < startOfTomorrow()} onClick={() => onAdd(key)} aria-label="Aggiungi" className="opacity-60 group-hover:opacity-100">
+                {d >= startOfTomorrow() && <Plus />}
               </Button>
             </div>
             <div className="space-y-1.5">
