@@ -3,7 +3,7 @@ import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { ArrowDown, ArrowLeft, ArrowUp, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { PageBody, PageHeader } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

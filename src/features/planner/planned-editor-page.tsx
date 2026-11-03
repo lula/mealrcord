@@ -2,7 +2,7 @@ import { useEffect, useReducer, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { eachDayOfInterval, endOfWeek, format, parseISO, startOfToday, startOfTomorrow, startOfWeek } from "date-fns";
+import { eachDayOfInterval, endOfWeek, format, parseISO, startOfTomorrow, startOfWeek } from "date-fns";
 import { Link, useCanGoBack, useNavigate, useParams, useRouter, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, CalendarIcon, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";

@@ -33,7 +33,6 @@ export function MealsPage() {
   const [toDelete, setToDelete] = useState<MealListItem | null>(null);
   const [toUnplan, setToUnplan] = useState<MealListItem | null>(null);
   const removeFromPlanner = useRemoveFromPlanner();
-  const [viewing, setViewing] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [recipeId, setRecipeId] = useState<string | undefined>();
   const [planned, setPlanned] = useState<PlannedFilter>("all");

@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { filterRecipes } from "@/features/recipes/recipes-page";
 import { useRecipes } from "@/features/recipes/api";
-import { TagBadges, TagPicker } from "@/features/tags/tag-picker";
+import { TagPicker } from "@/features/tags/tag-picker";
 
 /** Dialog to pick several recipes, searchable by name and filterable by tag. */
 export function RecipePicker({

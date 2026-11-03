@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { BookOpen, Copy, EllipsisVertical, Pencil, Plus, Search, Trash2, Users, X } from "lucide-react";
+import { BookOpen, Copy, EllipsisVertical, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { PageBody, PageHeader } from "@/components/page";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ListPagination } from "@/components/list-pagination";
 import {
   AlertDialog,
@@ -20,7 +20,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { toPlainText } from "@/lib/rich-text";
 import { TagBadges, TagPicker } from "@/features/tags/tag-picker";
 import { dishesUsingRecipe, mealsUsingRecipe, useDeleteRecipe, useDuplicateRecipe, useRecipes, type RecipeListItem } from "./api";
 import { format } from "date-fns";

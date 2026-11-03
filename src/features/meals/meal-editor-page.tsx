@@ -202,7 +202,7 @@ export function MealEditorPage() {
                     </CardHeader>
                     {ids.length > 0 && (
                       <CardContent className="space-y-1">
-                        {ids.map((id, i) => (
+                        {ids.map((id) => (
                           <div key={id} className="bg-muted/50 flex items-center gap-1 rounded-md py-1 pr-1 pl-3 text-sm">
                             <button
                               type="button"
@@ -263,7 +263,7 @@ export function MealEditorPage() {
                   </CardHeader>
                   {ids.length > 0 && (
                     <CardContent className="space-y-1">
-                      {ids.map((id, i) => {
+                      {ids.map((id) => {
                         const dish = dishById.get(id);
                         return (
                           <div key={id} className="bg-muted/50 flex items-center gap-1 rounded-md py-1 pr-1 pl-3 text-sm">
