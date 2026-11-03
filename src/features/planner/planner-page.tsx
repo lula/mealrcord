@@ -40,9 +40,7 @@ import {
   ShoppingCart,
   Trash2,
   TriangleAlert,
-  Users,
-  X,
-  ArrowLeft,
+  Users, ArrowLeft
 } from "lucide-react";
 import { PageBody, PageHeader } from "@/components/page";
 import { ConfirmDialog } from "@/components/confirm-dialog";
