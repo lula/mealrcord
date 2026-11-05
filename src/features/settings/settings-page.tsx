@@ -2,7 +2,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { useQueryClient } from "@tanstack/react-query";
-import { Database, Download, FileJson, Lock, Pencil, Plus, Trash2, Upload } from "lucide-react";
+import { Database, Download, FileJson, Lock, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { PageBody, PageHeader } from "@/components/page";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -10,18 +10,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { backupDb, dbErrorMessage, restoreDb } from "@/db/client";
 import { DIMENSIONS, type Dimension } from "@/db/schema";
-import { useDeleteIngredient, useIngredients, useUpdateIngredient } from "@/features/ingredients/api";
+import { useCreateIngredientCategory, useDeleteIngredientCategory, useIngredientCategories } from "@/features/ingredients/api";
 import { useCreateTag, useDeleteTag, useTags } from "@/features/tags/api";
 import { DIMENSION_LABELS, useCreateUnit, useDeleteUnit, useUnits } from "@/features/units/api";
-import { UnitSelect } from "@/features/units/unit-select";
-import { DEFAULT_UNIT_ID, formatNumber } from "@/lib/units";
+import { formatNumber } from "@/lib/units";
 import { useSaveSetting, useSettings } from "./api";
 import { exportJson } from "./backup";
 
@@ -30,16 +29,16 @@ export function SettingsPage() {
     <>
       <PageHeader title="Impostazioni" />
       <PageBody>
-        <Tabs defaultValue="ingredients">
+        <Tabs defaultValue="categories">
           <TabsList>
-            <TabsTrigger value="ingredients">Ingredienti</TabsTrigger>
+            <TabsTrigger value="categories">Categorie</TabsTrigger>
             <TabsTrigger value="tags">Tag</TabsTrigger>
             <TabsTrigger value="units">Simbolo</TabsTrigger>
             <TabsTrigger value="preferences">Preferenze</TabsTrigger>
             <TabsTrigger value="backup">Backup</TabsTrigger>
           </TabsList>
-          <TabsContent value="ingredients">
-            <IngredientsTab />
+          <TabsContent value="categories">
+            <CategoriesTab />
           </TabsContent>
           <TabsContent value="tags">
             <TagsTab />
@@ -59,112 +58,53 @@ export function SettingsPage() {
   );
 }
 
-function IngredientsTab() {
-  const { data: ingredients = [] } = useIngredients();
-  const { data: units = [] } = useUnits();
-  const del = useDeleteIngredient();
-  const [editing, setEditing] = useState<{ id: string; name: string; defaultUnitId: string | null } | null>(null);
-  const unitSymbol = new Map(units.map((u) => [u.id, u.symbol]));
+function CategoriesTab() {
+  const { data: categories = [] } = useIngredientCategories();
+  const create = useCreateIngredientCategory();
+  const del = useDeleteIngredientCategory();
+  const [name, setName] = useState("");
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ingredienti</CardTitle>
-        <CardDescription>Condivisi tra le ricette. Si creano dall'editor ricetta; qui puoi rinominarli e impostare l'unità predefinita.</CardDescription>
+        <CardTitle>Categorie ingredienti</CardTitle>
+        <CardDescription>Ogni ingrediente può avere una categoria. Eliminando una categoria, gli ingredienti restano senza.</CardDescription>
       </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Unità predefinita</TableHead>
-              <TableHead className="text-right">Ricette</TableHead>
-              <TableHead className="w-24" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {ingredients.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={4} className="text-muted-foreground h-20 text-center">
-                  Nessun ingrediente.
-                </TableCell>
-              </TableRow>
-            )}
-            {ingredients.map((i) => (
-              <TableRow key={i.id}>
-                <TableCell className="font-medium">{i.name}</TableCell>
-                <TableCell>{unitSymbol.get(i.defaultUnitId ?? DEFAULT_UNIT_ID)}</TableCell>
-                <TableCell className="text-right tabular-nums">{i.usage}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="icon-sm" aria-label="Modifica" onClick={() => setEditing(i)}>
-                    <Pencil />
-                  </Button>
-                  <ConfirmDialog
-                    trigger={
-                      <Button variant="ghost" size="icon-sm" aria-label="Elimina" disabled={i.usage > 0} title={i.usage > 0 ? "Usato in ricette" : undefined}>
-                        <Trash2 />
-                      </Button>
-                    }
-                    title={`Eliminare «${i.name}»?`}
-                    onConfirm={() => del.mutate(i.id)}
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-      <IngredientDialog value={editing} onClose={() => setEditing(null)} />
-    </Card>
-  );
-}
-
-function IngredientDialog({ value, onClose }: { value: { id: string; name: string; defaultUnitId: string | null } | null; onClose: () => void }) {
-  const update = useUpdateIngredient();
-  const [draft, setDraft] = useState(value);
-  if (value && draft?.id !== value.id) setDraft(value);
-
-  return (
-    <Dialog open={!!value} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-sm">
-        <form
-          className="space-y-6"
-          onSubmit={(e) => e.preventDefault()}
-        >
-          <DialogHeader>
-            <DialogTitle>Modifica ingrediente</DialogTitle>
-          </DialogHeader>
-          {draft && (
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="ing-name">Nome</FieldLabel>
-                <Input id="ing-name" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
-              </Field>
-              <Field>
-                <FieldLabel>Unità predefinita</FieldLabel>
-                <UnitSelect value={draft.defaultUnitId ?? DEFAULT_UNIT_ID} onChange={(id) => setDraft({ ...draft, defaultUnitId: id })} className="w-40" />
-              </Field>
-            </FieldGroup>
-          )}
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Annulla
-            </Button>
-            <Button
-              type="button"
-              disabled={update.isPending}
-              onClick={async () => {
-                if (!draft?.name.trim()) return;
-                await update.mutateAsync(draft);
-                onClose();
-              }}
-            >
-              Salva
-            </Button>
-          </DialogFooter>
+      <CardContent className="space-y-4">
+        <form className="flex max-w-sm gap-2" onSubmit={(e) => e.preventDefault()}>
+          <Input placeholder="Nuova categoria (es. Verdura)" value={name} onChange={(e) => setName(e.target.value)} />
+          <Button
+            type="button"
+            disabled={!name.trim()}
+            onClick={async () => {
+              if (!name.trim()) return;
+              await create.mutateAsync(name);
+              setName("");
+            }}
+          >
+            <Plus /> Aggiungi
+          </Button>
         </form>
-      </DialogContent>
-    </Dialog>
+        <div className="flex flex-wrap gap-2">
+          {categories.length === 0 && <p className="text-muted-foreground text-sm">Nessuna categoria.</p>}
+          {categories.map((c) => (
+            <Badge key={c.id} variant="secondary" className="h-7 gap-1 pr-0.5 pl-2.5">
+              {c.name}
+              <ConfirmDialog
+                trigger={
+                  <Button variant="ghost" size="icon-xs" aria-label={`Elimina ${c.name}`}>
+                    <Trash2 />
+                  </Button>
+                }
+                title={`Eliminare la categoria «${c.name}»?`}
+                description="Gli ingredienti di questa categoria resteranno senza categoria."
+                onConfirm={() => del.mutate(c.id)}
+              />
+            </Badge>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

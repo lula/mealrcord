@@ -7,7 +7,7 @@ vi.mock("@tauri-apps/api/core", () => ({ invoke: (cmd: string, args: unknown) =>
 vi.mock("sonner", () => ({ toast: { success: () => {}, error: () => {} } }));
 
 const { saveRecipe, getRecipe, mealsUsingRecipe } = await import("@/features/recipes/api");
-const { createIngredient } = await import("@/features/ingredients/api");
+const { createIngredient, createIngredientCategory, listIngredients, updateIngredient } = await import("@/features/ingredients/api");
 const { saveMeal, duplicateMeal, plannedUsageCount } = await import("@/features/meals/api");
 const { db } = await import("./client");
 const { mealRecipes, plannedMeals } = await import("./schema");
@@ -70,6 +70,51 @@ describe("settings", () => {
     await saveSetting("guestsWarningPercent", 35);
     await saveSetting("guestsWarningPercent", 40);
     expect((await getSettings()).guestsWarningPercent).toBe(40);
+  });
+});
+
+describe("ingredient categories", () => {
+  it("sets, changes and clears the category of an ingredient", async () => {
+    const veg = await createIngredientCategory("Verdura");
+    const summer = await createIngredientCategory("Estate");
+    const zucchine = await createIngredient({ name: "Zucchine", categoryId: veg });
+    const find = async () => (await listIngredients()).find((i) => i.id === zucchine)!;
+
+    expect((await find()).categoryId).toBe(veg);
+    await updateIngredient({ id: zucchine, name: "Zucchine", defaultUnitId: "unit-g", categoryId: summer });
+    expect((await find()).categoryId).toBe(summer);
+    await updateIngredient({ id: zucchine, name: "Zucchine", defaultUnitId: "unit-g", categoryId: null });
+    expect((await find()).categoryId).toBeNull();
+  });
+
+  it("clears the category from ingredients when it is deleted", async () => {
+    const veg = await createIngredientCategory("Verdura");
+    const zucchine = await createIngredient({ name: "Zucchine", categoryId: veg });
+    const { ingredientCategories } = await import("./schema");
+    const { eq } = await import("drizzle-orm");
+    await db.delete(ingredientCategories).where(eq(ingredientCategories.id, veg)).run();
+    expect((await listIngredients()).find((i) => i.id === zucchine)!.categoryId).toBeNull();
+  });
+
+  it("groups lines by category, uncategorized last", async () => {
+    const { groupByCategory } = await import("@/features/ingredients/api");
+    const lines = [{ ingredientId: "a" }, { ingredientId: "b" }, { ingredientId: "c" }, { ingredientId: "d" }];
+    const categories = [
+      { id: "dairy", name: "Latticini" },
+      { id: "fruit", name: "Frutta" },
+      { id: "veg", name: "Verdura" },
+    ];
+    const categoryOf = new Map<string, string | null>([["a", "veg"], ["b", null], ["c", "dairy"]]);
+    expect(groupByCategory(lines, categories, categoryOf).map((g) => [g.name, g.lines.map((l) => l.ingredientId)])).toEqual([
+      ["Latticini", ["c"]],
+      ["Verdura", ["a"]],
+      ["Senza categoria", ["b", "d"]],
+    ]);
+  });
+
+  it("rejects duplicate category names ignoring case", async () => {
+    await createIngredientCategory("Verdura");
+    await expect(createIngredientCategory("verdura")).rejects.toThrow();
   });
 });
 

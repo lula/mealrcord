@@ -10,9 +10,13 @@ import { Calendar } from "@/components/ui/calendar";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useGroupByCategory } from "@/features/ingredients/api";
+import { LinesByCategory } from "@/features/planner/planned-detail";
 import { plannedLines, usePlanned } from "@/features/planner/api";
 import { aggregate, formatQuantity } from "@/lib/units";
 import { cn } from "@/lib/utils";
+import { sendEmail } from "@/lib/share";
 
 export type ShoppingSearch = { from?: string; to?: string };
 
@@ -26,18 +30,27 @@ export function ShoppingPage() {
   const { data: entries = [], isLoading } = usePlanned(from, to);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [draft, setDraft] = useState<DateRange | undefined>();
+  const [view, setView] = useState<"total" | "categories">("total");
 
   const lines = useMemo(
     () => aggregate(entries.flatMap(plannedLines)),
     [entries],
   );
 
+  const groups = useGroupByCategory(lines);
+
   const setRange = (f: Date, t: Date) => navigate({ search: { from: iso(f), to: iso(t) } });
   const thisWeek = startOfWeek(new Date());
 
-  const asText = () =>
-    [`Lista della spesa ${format(parseISO(from), "d/M")}–${format(parseISO(to), "d/M/yyyy")}`, "", ...lines.map((l) => `- ${l.ingredientName}: ${formatQuantity(l.quantity, l.unit)}`)].join("\n");
+  // The copied text follows the selected view.
+  const title = `Lista della spesa ${format(parseISO(from), "d/M")}–${format(parseISO(to), "d/M/yyyy")}`;
 
+  const asText = () => {
+    const item = (l: (typeof lines)[number]) => `- ${l.ingredientName}: ${formatQuantity(l.quantity, l.unit)}`;
+    const body = view === "total" ? lines.map(item) : groups.flatMap((g, i) => [...(i ? [""] : []), `${g.name}:`, ...g.lines.map(item)]);
+    return [title, "", ...body].join("\n");
+  };
+  
   return (
     <>
       <PageHeader
@@ -58,8 +71,8 @@ export function ShoppingPage() {
             {/* <Button variant="outline" disabled={!lines.length} onClick={() => window.print()}>
               <Printer /> Stampa
             </Button> */}
-            <Button variant="outline" disabled={!lines.length}>
-              <Share2  /> Condividi
+            <Button variant="outline" disabled={!lines.length} onClick={() => sendEmail(title, asText())}>
+              <Share2 /> Condividi
             </Button>
           </>
         }
@@ -118,28 +131,35 @@ export function ShoppingPage() {
             </EmptyHeader>
           </Empty>
         ) : (
-          <div className="max-w-2xl rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Ingrediente</TableHead>
-                  <TableHead className="text-right">Quantità</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {lines.map((l) => {
-                  return (
-                    <TableRow key={l.key} className="cursor-pointer">
-                      <TableCell>{l.ingredientName}</TableCell>
-                      <TableCell className={cn("text-right tabular-nums")}>
-                        {formatQuantity(l.quantity, l.unit)}
-                      </TableCell>
+          <Tabs value={view} onValueChange={(v) => setView(v as typeof view)} className="max-w-2xl">
+            <TabsList className="print:hidden">
+              <TabsTrigger value="total">Totale</TabsTrigger>
+              <TabsTrigger value="categories">Per categoria</TabsTrigger>
+            </TabsList>
+            <TabsContent value="total">
+              <div className="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Ingrediente</TableHead>
+                      <TableHead className="text-right">Quantità</TableHead>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+                  </TableHeader>
+                  <TableBody>
+                    {lines.map((l) => (
+                      <TableRow key={l.key} className="cursor-pointer">
+                        <TableCell>{l.ingredientName}</TableCell>
+                        <TableCell className={cn("text-right tabular-nums")}>{formatQuantity(l.quantity, l.unit)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+            <TabsContent value="categories">
+              <LinesByCategory lines={lines} />
+            </TabsContent>
+          </Tabs>
         )}
       </PageBody>
     </>

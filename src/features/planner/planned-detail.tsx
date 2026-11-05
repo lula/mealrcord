@@ -1,19 +1,31 @@
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+import { useGroupByCategory } from "@/features/ingredients/api";
 import { COURSE_LABELS } from "@/features/meals/api";
-import { aggregate, displayQuantity, formatNumber, formatQuantity } from "@/lib/units";
+import { aggregate, displayQuantity, formatNumber, formatQuantity, type AggregatedLine } from "@/lib/units";
 import { plannedLines, scalePlanned, scalePlannedDishes, type ScalableEntry, type ScaledRecipe } from "./api";
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Copy, Share2 } from "lucide-react";
+import { sendEmail } from "@/lib/share";
+import { toast } from "sonner";
 
-function SectionTitle({ title, coefficient }: { title: string; coefficient: number }) {
+function SectionTitle({ title, coefficient, action }: { title: string; coefficient: number, action?: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2">
-      <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{title}</h3>
-      {coefficient !== 1 && (
-        <Badge variant="outline" title="Coefficiente quantità">
-          ×{formatNumber(coefficient)}
-        </Badge>
-      )}
+    <div className="flex items-center gap-4 justify-between">
+      <div className="flex items-center gap-2">
+        <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{title}</h3>
+        {coefficient !== 1 && (
+          <Badge variant="outline" title="Coefficiente quantità">
+            ×{formatNumber(coefficient)}
+          </Badge>
+        )}
+      </div>
+      {action && <div>
+        {action}
+      </div>}
     </div>
   );
 }
@@ -87,16 +99,20 @@ export function PlannedDetail({ entry }: { entry: ScalableEntry }) {
 /** Quantities of a planned meal in two tabs: one flat list of ingredients, and per recipe. */
 export function PlannedQuantities({ entry }: { entry: ScalableEntry }) {
   return (
-    <Tabs defaultValue="total">
+    <Tabs defaultValue="categories">
       <TabsList className="mb-3">
+        <TabsTrigger value="categories">Per categoria</TabsTrigger>
         <TabsTrigger value="total">Lista delle spesa</TabsTrigger>
         <TabsTrigger value="recipes">Per ricetta</TabsTrigger>
       </TabsList>
-      <TabsContent value="total">
-        <IngredientTotals entry={entry} />
+      <TabsContent value="categories">
+        <IngredientCategories entry={entry} />
       </TabsContent>
       <TabsContent value="recipes">
         <PlannedDetail entry={entry} />
+      </TabsContent>
+      <TabsContent value="total">
+        <IngredientTotals entry={entry} />
       </TabsContent>
     </Tabs>
   );
@@ -118,6 +134,59 @@ export function IngredientTotals({ entry }: { entry: ScalableEntry }) {
           ))}
         </TableBody>
       </Table>
+    </div>
+  );
+}
+
+/** Same totals as `IngredientTotals`, grouped by ingredient category. */
+export function IngredientCategories({ entry }: { entry: ScalableEntry }) {
+  const lines = aggregate(plannedLines(entry));
+
+  if (lines.length === 0) return <p className="text-muted-foreground text-sm">Nessun ingrediente.</p>;
+  return <LinesByCategory lines={lines} />;
+}
+
+/** Aggregated lines in one table per ingredient category ("Senza categoria" last). */
+export function LinesByCategory({ lines, className }: { lines: AggregatedLine[]; className?: string }) {
+  const groups = useGroupByCategory(lines);
+
+  const title = (categoryName: string) => `Lista della spesa ${categoryName}`;
+
+  const asText = (groupTitle: string, lines: AggregatedLine[]) => {
+    const item = (l: (typeof lines)[number]) => `- ${l.ingredientName}: ${formatQuantity(l.quantity, l.unit)}`;
+    const body = lines.map(item);
+    return [groupTitle, "", ...body].join("\n");
+  };
+
+  return (
+    <div className={cn("space-y-4", className)}>
+      {groups.map((g) => (
+        <section key={g.id ?? "none"} className="space-y-2">
+          <SectionTitle title={g.name} coefficient={1} action={<>
+            <Button variant="ghost" size="icon-xs" onClick={async () => {
+              await navigator.clipboard.writeText(asText(title(g.name), g.lines));
+              toast.success("Lista copiata");
+            }}>
+              <Copy />
+            </Button>
+            <Button variant="ghost" size="icon-xs" onClick={() => sendEmail(title(g.name), asText(title(g.name), g.lines))}>
+              <Share2 />
+            </Button>
+          </>} />
+          <div className="rounded-lg border">
+            <Table>
+              <TableBody>
+                {g.lines.map((l) => (
+                  <TableRow key={l.key}>
+                    <TableCell className="py-1.5">{l.ingredientName}</TableCell>
+                    <TableCell className="py-1.5 text-right tabular-nums">{formatQuantity(l.quantity, l.unit)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </section>
+      ))}
     </div>
   );
 }

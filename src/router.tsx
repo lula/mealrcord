@@ -10,6 +10,7 @@ import { PlannerPage, type PlannerSearch } from "@/features/planner/planner-page
 import { PlannedEditorPage, type PlannedNewSearch } from "@/features/planner/planned-editor-page";
 import { ShoppingPage, type ShoppingSearch } from "@/features/shopping/shopping-page";
 import { SettingsPage } from "@/features/settings/settings-page";
+import { IngredientsPage } from "@/features/ingredients/ingredients-page";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const asDate = (v: unknown) => (typeof v === "string" && DATE_RE.test(v) ? v : undefined);
@@ -65,6 +66,9 @@ export const shoppingRoute = createRoute({
   validateSearch: (s: Record<string, unknown>): ShoppingSearch => ({ from: asDate(s.from), to: asDate(s.to) }),
 });
 
+const ingredientsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/ingredients", component: IngredientsPage });
+export const ingredientEditRoute = createRoute({ getParentRoute: () => rootRoute, path: "/ingredients/$ingredientId", component: IngredientsPage });
+
 const settingsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/settings", component: SettingsPage });
 
 const routeTree = rootRoute.addChildren([
@@ -82,6 +86,8 @@ const routeTree = rootRoute.addChildren([
   plannedNewRoute,
   plannedEditRoute,
   shoppingRoute,
+  ingredientsRoute,
+  ingredientEditRoute,
   settingsRoute,
 ]);
 

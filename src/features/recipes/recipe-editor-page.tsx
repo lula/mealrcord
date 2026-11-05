@@ -1,9 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { ArrowLeft, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { PageBody, PageHeader } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,9 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RichTextEditor } from "@/components/rich-text-editor";
+import { useIngredients } from "@/features/ingredients/api";
 import { IngredientCombobox } from "@/features/ingredients/ingredient-combobox";
+import { IngredientDialog } from "@/features/ingredients/ingredients-page";
 import { TagPicker } from "@/features/tags/tag-picker";
 import { UnitSelect } from "@/features/units/unit-select";
 import { DEFAULT_UNIT_ID } from "@/lib/units";
@@ -53,6 +55,10 @@ export function RecipeEditorPage() {
 
   const form = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: EMPTY });
   const lines = useFieldArray({ control: form.control, name: "ingredients" });
+  const { data: ingredients = [] } = useIngredients();
+  // Ingredient whose edit dialog is open (edited in place, the recipe form is kept).
+  const [editingIngredientId, setEditingIngredientId] = useState<string | null>(null);
+  const editingIngredient = ingredients.find((i) => i.id === editingIngredientId) ?? null;
 
   useEffect(() => {
     form.reset(recipe ? toForm(recipe) : EMPTY);
@@ -88,6 +94,7 @@ export function RecipeEditorPage() {
   }
 
   return (
+    <>
     <form onSubmit={(e) => e.preventDefault()} className="flex flex-1 flex-col">
       <PageHeader
         title={recipe ? recipe.name : "Nuova ricetta"}
@@ -182,6 +189,18 @@ export function RecipeEditorPage() {
                       <Button type="button" variant="ghost" size="icon" onClick={() => lines.remove(i)} aria-label="Rimuovi">
                         <Trash2 />
                       </Button>
+                      {form.watch(`ingredients.${i}.ingredientId`) && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Modifica ingrediente"
+                          title="Modifica ingrediente"
+                          onClick={() => setEditingIngredientId(form.getValues(`ingredients.${i}.ingredientId`))}
+                        >
+                          <Pencil />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 );
@@ -218,5 +237,7 @@ export function RecipeEditorPage() {
 
       </PageBody>
     </form>
+    <IngredientDialog value={editingIngredient} onClose={() => setEditingIngredientId(null)} />
+    </>
   );
 }

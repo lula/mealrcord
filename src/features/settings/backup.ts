@@ -8,6 +8,7 @@ export async function exportJson(path: string) {
     app: "mealrcord",
     exportedAt: new Date().toISOString(),
     units: await db.select().from(s.units),
+    ingredientCategories: await db.select().from(s.ingredientCategories),
     ingredients: await db.select().from(s.ingredients),
     tags: await db.select().from(s.tags),
     recipes: await db.select().from(s.recipes),

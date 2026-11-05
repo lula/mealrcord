@@ -17,10 +17,18 @@ export const units = sqliteTable("units", {
   isSystem: integer("is_system", { mode: "boolean" }).notNull().default(false),
 });
 
+/** Ingredient categories (e.g. Verdura, Latticini). */
+export const ingredientCategories = sqliteTable("ingredient_categories", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+});
+
 export const ingredients = sqliteTable("ingredients", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   defaultUnitId: text("default_unit_id").references(() => units.id),
+  /** Zero or one category; cleared when the category is deleted. */
+  categoryId: text("category_id").references(() => ingredientCategories.id),
 });
 
 export const recipes = sqliteTable("recipes", {
@@ -208,7 +216,12 @@ export const unitsRelations = relations(units, () => ({}));
 
 export const ingredientsRelations = relations(ingredients, ({ one, many }) => ({
   defaultUnit: one(units, { fields: [ingredients.defaultUnitId], references: [units.id] }),
+  category: one(ingredientCategories, { fields: [ingredients.categoryId], references: [ingredientCategories.id] }),
   recipeIngredients: many(recipeIngredients),
+}));
+
+export const ingredientCategoriesRelations = relations(ingredientCategories, ({ many }) => ({
+  ingredients: many(ingredients),
 }));
 
 export const recipesRelations = relations(recipes, ({ many }) => ({
@@ -280,6 +293,7 @@ export const plannedMealCourseCoefficientsRelations = relations(plannedMealCours
 
 export type Unit = typeof units.$inferSelect;
 export type Ingredient = typeof ingredients.$inferSelect;
+export type IngredientCategory = typeof ingredientCategories.$inferSelect;
 export type Recipe = typeof recipes.$inferSelect;
 export type Tag = typeof tags.$inferSelect;
 export type Meal = typeof meals.$inferSelect;

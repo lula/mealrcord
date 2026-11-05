@@ -1,5 +1,5 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { BookOpen, CalendarDays, CookingPot, Moon, PanelLeftIcon, Settings, ShoppingCart, Sun, UtensilsCrossed } from "lucide-react";
+import { BookOpen, CalendarDays, Carrot, CookingPot, Moon, PanelLeftIcon, Settings, ShoppingCart, Sun, UtensilsCrossed } from "lucide-react";
 import appIcon from "@/assets/app-icon.svg";
 import { useNavCounts } from "@/components/nav-counts";
 import { useTheme } from "@/components/theme";
@@ -23,6 +23,7 @@ const NAV = [
   { to: "/meals", label: "Menu", icon: UtensilsCrossed },
   { to: "/dishes", label: "Piatti unici", icon: CookingPot },
   { to: "/recipes", label: "Ricette", icon: BookOpen },
+  { to: "/ingredients", label: "Ingredienti", icon: Carrot },
   { to: "/shopping", label: "Lista della spesa", icon: ShoppingCart },
   { to: "/settings", label: "Impostazioni", icon: Settings },
 ] as const;
