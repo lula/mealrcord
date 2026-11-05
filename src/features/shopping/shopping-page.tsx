@@ -16,6 +16,7 @@ import { LinesByCategory } from "@/features/planner/planned-detail";
 import { plannedLines, usePlanned } from "@/features/planner/api";
 import { aggregate, formatQuantity } from "@/lib/units";
 import { cn } from "@/lib/utils";
+import { sendEmail } from "@/lib/share";
 
 export type ShoppingSearch = { from?: string; to?: string };
 
@@ -42,12 +43,14 @@ export function ShoppingPage() {
   const thisWeek = startOfWeek(new Date());
 
   // The copied text follows the selected view.
+  const title = `Lista della spesa ${format(parseISO(from), "d/M")}–${format(parseISO(to), "d/M/yyyy")}`;
+
   const asText = () => {
     const item = (l: (typeof lines)[number]) => `- ${l.ingredientName}: ${formatQuantity(l.quantity, l.unit)}`;
     const body = view === "total" ? lines.map(item) : groups.flatMap((g, i) => [...(i ? [""] : []), `${g.name}:`, ...g.lines.map(item)]);
-    return [`Lista della spesa ${format(parseISO(from), "d/M")}–${format(parseISO(to), "d/M/yyyy")}`, "", ...body].join("\n");
+    return [title, "", ...body].join("\n");
   };
-
+  
   return (
     <>
       <PageHeader
@@ -68,8 +71,8 @@ export function ShoppingPage() {
             {/* <Button variant="outline" disabled={!lines.length} onClick={() => window.print()}>
               <Printer /> Stampa
             </Button> */}
-            <Button variant="outline" disabled={!lines.length}>
-              <Share2  /> Condividi
+            <Button variant="outline" disabled={!lines.length} onClick={() => sendEmail(title, asText())}>
+              <Share2 /> Condividi
             </Button>
           </>
         }
