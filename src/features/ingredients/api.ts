@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { asc, count, eq } from "drizzle-orm";
 import { db, newId } from "@/db/client";
@@ -83,4 +84,14 @@ export function groupByCategory<T extends { ingredientId: string }>(
   const byId = new Map(groups.map((g) => [g.id, g]));
   for (const l of lines) (byId.get(categoryOf.get(l.ingredientId) ?? null) ?? byId.get(null)!).lines.push(l);
   return groups.filter((g) => g.lines.length);
+}
+
+/** Groups lines by the current categories of their ingredients (see `groupByCategory`). */
+export function useGroupByCategory<T extends { ingredientId: string }>(lines: T[]) {
+  const { data: ingredients = [] } = useIngredients();
+  const { data: categories = [] } = useIngredientCategories();
+  return useMemo(
+    () => groupByCategory(lines, categories, new Map(ingredients.map((i) => [i.id, i.categoryId]))),
+    [lines, categories, ingredients],
+  );
 }

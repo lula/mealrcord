@@ -1,9 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { groupByCategory, useIngredientCategories, useIngredients } from "@/features/ingredients/api";
+import { cn } from "@/lib/utils";
+import { useGroupByCategory } from "@/features/ingredients/api";
 import { COURSE_LABELS } from "@/features/meals/api";
-import { aggregate, displayQuantity, formatNumber, formatQuantity } from "@/lib/units";
+import { aggregate, displayQuantity, formatNumber, formatQuantity, type AggregatedLine } from "@/lib/units";
 import { plannedLines, scalePlanned, scalePlannedDishes, type ScalableEntry, type ScaledRecipe } from "./api";
 
 function SectionTitle({ title, coefficient }: { title: string; coefficient: number }) {
@@ -129,14 +130,16 @@ export function IngredientTotals({ entry }: { entry: ScalableEntry }) {
 
 /** Same totals as `IngredientTotals`, grouped by ingredient category. */
 export function IngredientCategories({ entry }: { entry: ScalableEntry }) {
-  const { data: ingredients = [] } = useIngredients();
-  const { data: categories = [] } = useIngredientCategories();
   const lines = aggregate(plannedLines(entry));
   if (lines.length === 0) return <p className="text-muted-foreground text-sm">Nessun ingrediente.</p>;
-  const categoryOf = new Map(ingredients.map((i) => [i.id, i.categoryId]));
-  const groups = groupByCategory(lines, categories, categoryOf);
+  return <LinesByCategory lines={lines} />;
+}
+
+/** Aggregated lines in one table per ingredient category ("Senza categoria" last). */
+export function LinesByCategory({ lines, className }: { lines: AggregatedLine[]; className?: string }) {
+  const groups = useGroupByCategory(lines);
   return (
-    <div className="space-y-4">
+    <div className={cn("space-y-4", className)}>
       {groups.map((g) => (
         <section key={g.id ?? "none"} className="space-y-2">
           <SectionTitle title={g.name} coefficient={1} />
