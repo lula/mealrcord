@@ -67,3 +67,20 @@ export const useDeleteIngredientCategory = () =>
   useDbMutation((id: string) => db.delete(ingredientCategories).where(eq(ingredientCategories.id, id)).run(), {
     success: "Categoria eliminata",
   });
+
+export const NO_CATEGORY_LABEL = "Senza categoria";
+
+/**
+ * Groups lines by their ingredient's category: categories in the given order
+ * (empty ones skipped), then "Senza categoria" last.
+ */
+export function groupByCategory<T extends { ingredientId: string }>(
+  lines: T[],
+  categories: { id: string; name: string }[],
+  categoryOf: Map<string, string | null>,
+): { id: string | null; name: string; lines: T[] }[] {
+  const groups = [...categories.map((c) => ({ id: c.id as string | null, name: c.name, lines: [] as T[] })), { id: null, name: NO_CATEGORY_LABEL, lines: [] as T[] }];
+  const byId = new Map(groups.map((g) => [g.id, g]));
+  for (const l of lines) (byId.get(categoryOf.get(l.ingredientId) ?? null) ?? byId.get(null)!).lines.push(l);
+  return groups.filter((g) => g.lines.length);
+}

@@ -96,6 +96,22 @@ describe("ingredient categories", () => {
     expect((await listIngredients()).find((i) => i.id === zucchine)!.categoryId).toBeNull();
   });
 
+  it("groups lines by category, uncategorized last", async () => {
+    const { groupByCategory } = await import("@/features/ingredients/api");
+    const lines = [{ ingredientId: "a" }, { ingredientId: "b" }, { ingredientId: "c" }, { ingredientId: "d" }];
+    const categories = [
+      { id: "dairy", name: "Latticini" },
+      { id: "fruit", name: "Frutta" },
+      { id: "veg", name: "Verdura" },
+    ];
+    const categoryOf = new Map<string, string | null>([["a", "veg"], ["b", null], ["c", "dairy"]]);
+    expect(groupByCategory(lines, categories, categoryOf).map((g) => [g.name, g.lines.map((l) => l.ingredientId)])).toEqual([
+      ["Latticini", ["c"]],
+      ["Verdura", ["a"]],
+      ["Senza categoria", ["b", "d"]],
+    ]);
+  });
+
   it("rejects duplicate category names ignoring case", async () => {
     await createIngredientCategory("Verdura");
     await expect(createIngredientCategory("verdura")).rejects.toThrow();

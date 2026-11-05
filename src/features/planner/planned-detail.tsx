@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { groupByCategory, useIngredientCategories, useIngredients } from "@/features/ingredients/api";
 import { COURSE_LABELS } from "@/features/meals/api";
 import { aggregate, displayQuantity, formatNumber, formatQuantity } from "@/lib/units";
 import { plannedLines, scalePlanned, scalePlannedDishes, type ScalableEntry, type ScaledRecipe } from "./api";
@@ -90,10 +91,14 @@ export function PlannedQuantities({ entry }: { entry: ScalableEntry }) {
     <Tabs defaultValue="total">
       <TabsList className="mb-3">
         <TabsTrigger value="total">Lista delle spesa</TabsTrigger>
+        <TabsTrigger value="categories">Per categoria</TabsTrigger>
         <TabsTrigger value="recipes">Per ricetta</TabsTrigger>
       </TabsList>
       <TabsContent value="total">
         <IngredientTotals entry={entry} />
+      </TabsContent>
+      <TabsContent value="categories">
+        <IngredientCategories entry={entry} />
       </TabsContent>
       <TabsContent value="recipes">
         <PlannedDetail entry={entry} />
@@ -118,6 +123,37 @@ export function IngredientTotals({ entry }: { entry: ScalableEntry }) {
           ))}
         </TableBody>
       </Table>
+    </div>
+  );
+}
+
+/** Same totals as `IngredientTotals`, grouped by ingredient category. */
+export function IngredientCategories({ entry }: { entry: ScalableEntry }) {
+  const { data: ingredients = [] } = useIngredients();
+  const { data: categories = [] } = useIngredientCategories();
+  const lines = aggregate(plannedLines(entry));
+  if (lines.length === 0) return <p className="text-muted-foreground text-sm">Nessun ingrediente.</p>;
+  const categoryOf = new Map(ingredients.map((i) => [i.id, i.categoryId]));
+  const groups = groupByCategory(lines, categories, categoryOf);
+  return (
+    <div className="space-y-4">
+      {groups.map((g) => (
+        <section key={g.id ?? "none"} className="space-y-2">
+          <SectionTitle title={g.name} coefficient={1} />
+          <div className="rounded-lg border">
+            <Table>
+              <TableBody>
+                {g.lines.map((l) => (
+                  <TableRow key={l.key}>
+                    <TableCell className="py-1.5">{l.ingredientName}</TableCell>
+                    <TableCell className="py-1.5 text-right tabular-nums">{formatQuantity(l.quantity, l.unit)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
