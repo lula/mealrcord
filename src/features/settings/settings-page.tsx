@@ -17,7 +17,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { backupDb, dbErrorMessage, restoreDb } from "@/db/client";
 import { DIMENSIONS, type Dimension } from "@/db/schema";
-import { useDeleteIngredient, useIngredients, useUpdateIngredient } from "@/features/ingredients/api";
+import {
+  useCreateIngredientCategory,
+  useDeleteIngredient,
+  useDeleteIngredientCategory,
+  useIngredientCategories,
+  useIngredients,
+  useUpdateIngredient,
+} from "@/features/ingredients/api";
 import { useCreateTag, useDeleteTag, useTags } from "@/features/tags/api";
 import { DIMENSION_LABELS, useCreateUnit, useDeleteUnit, useUnits } from "@/features/units/api";
 import { UnitSelect } from "@/features/units/unit-select";
@@ -33,6 +40,7 @@ export function SettingsPage() {
         <Tabs defaultValue="ingredients">
           <TabsList>
             <TabsTrigger value="ingredients">Ingredienti</TabsTrigger>
+            <TabsTrigger value="categories">Categorie</TabsTrigger>
             <TabsTrigger value="tags">Tag</TabsTrigger>
             <TabsTrigger value="units">Simbolo</TabsTrigger>
             <TabsTrigger value="preferences">Preferenze</TabsTrigger>
@@ -40,6 +48,9 @@ export function SettingsPage() {
           </TabsList>
           <TabsContent value="ingredients">
             <IngredientsTab />
+          </TabsContent>
+          <TabsContent value="categories">
+            <CategoriesTab />
           </TabsContent>
           <TabsContent value="tags">
             <TagsTab />
@@ -59,24 +70,29 @@ export function SettingsPage() {
   );
 }
 
+type IngredientDraft = { id: string; name: string; defaultUnitId: string | null; categoryId: string | null };
+
 function IngredientsTab() {
   const { data: ingredients = [] } = useIngredients();
   const { data: units = [] } = useUnits();
+  const { data: categories = [] } = useIngredientCategories();
   const del = useDeleteIngredient();
-  const [editing, setEditing] = useState<{ id: string; name: string; defaultUnitId: string | null } | null>(null);
+  const [editing, setEditing] = useState<IngredientDraft | null>(null);
   const unitSymbol = new Map(units.map((u) => [u.id, u.symbol]));
+  const categoryName = new Map(categories.map((c) => [c.id, c.name]));
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Ingredienti</CardTitle>
-        <CardDescription>Condivisi tra le ricette. Si creano dall'editor ricetta; qui puoi rinominarli e impostare l'unità predefinita.</CardDescription>
+        <CardDescription>Condivisi tra le ricette. Si creano dall'editor ricetta; qui puoi rinominarli e impostare unità predefinita e categoria.</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
+              <TableHead>Categoria</TableHead>
               <TableHead>Unità predefinita</TableHead>
               <TableHead className="text-right">Ricette</TableHead>
               <TableHead className="w-24" />
@@ -85,7 +101,7 @@ function IngredientsTab() {
           <TableBody>
             {ingredients.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-muted-foreground h-20 text-center">
+                <TableCell colSpan={5} className="text-muted-foreground h-20 text-center">
                   Nessun ingrediente.
                 </TableCell>
               </TableRow>
@@ -93,6 +109,7 @@ function IngredientsTab() {
             {ingredients.map((i) => (
               <TableRow key={i.id}>
                 <TableCell className="font-medium">{i.name}</TableCell>
+                <TableCell>{i.categoryId ? categoryName.get(i.categoryId) : <span className="text-muted-foreground">—</span>}</TableCell>
                 <TableCell>{unitSymbol.get(i.defaultUnitId ?? DEFAULT_UNIT_ID)}</TableCell>
                 <TableCell className="text-right tabular-nums">{i.usage}</TableCell>
                 <TableCell className="text-right">
@@ -119,8 +136,12 @@ function IngredientsTab() {
   );
 }
 
-function IngredientDialog({ value, onClose }: { value: { id: string; name: string; defaultUnitId: string | null } | null; onClose: () => void }) {
+// Radix Select does not accept an empty value.
+const NO_CATEGORY = "__none";
+
+function IngredientDialog({ value, onClose }: { value: IngredientDraft | null; onClose: () => void }) {
   const update = useUpdateIngredient();
+  const { data: categories = [] } = useIngredientCategories();
   const [draft, setDraft] = useState(value);
   if (value && draft?.id !== value.id) setDraft(value);
 
@@ -144,6 +165,26 @@ function IngredientDialog({ value, onClose }: { value: { id: string; name: strin
                 <FieldLabel>Unità predefinita</FieldLabel>
                 <UnitSelect value={draft.defaultUnitId ?? DEFAULT_UNIT_ID} onChange={(id) => setDraft({ ...draft, defaultUnitId: id })} className="w-40" />
               </Field>
+              <Field>
+                <FieldLabel>Categoria</FieldLabel>
+                <Select
+                  value={draft.categoryId ?? NO_CATEGORY}
+                  onValueChange={(id) => setDraft({ ...draft, categoryId: id === NO_CATEGORY ? null : id })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_CATEGORY}>Nessuna</SelectItem>
+                    {categories.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {categories.length === 0 && <FieldDescription>Crea le categorie nella scheda «Categorie».</FieldDescription>}
+              </Field>
             </FieldGroup>
           )}
           <DialogFooter>
@@ -165,6 +206,56 @@ function IngredientDialog({ value, onClose }: { value: { id: string; name: strin
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function CategoriesTab() {
+  const { data: categories = [] } = useIngredientCategories();
+  const create = useCreateIngredientCategory();
+  const del = useDeleteIngredientCategory();
+  const [name, setName] = useState("");
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Categorie ingredienti</CardTitle>
+        <CardDescription>Ogni ingrediente può avere una categoria. Eliminando una categoria, gli ingredienti restano senza.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <form className="flex max-w-sm gap-2" onSubmit={(e) => e.preventDefault()}>
+          <Input placeholder="Nuova categoria (es. Verdura)" value={name} onChange={(e) => setName(e.target.value)} />
+          <Button
+            type="button"
+            disabled={!name.trim()}
+            onClick={async () => {
+              if (!name.trim()) return;
+              await create.mutateAsync(name);
+              setName("");
+            }}
+          >
+            <Plus /> Aggiungi
+          </Button>
+        </form>
+        <div className="flex flex-wrap gap-2">
+          {categories.length === 0 && <p className="text-muted-foreground text-sm">Nessuna categoria.</p>}
+          {categories.map((c) => (
+            <Badge key={c.id} variant="secondary" className="h-7 gap-1 pr-0.5 pl-2.5">
+              {c.name}
+              <ConfirmDialog
+                trigger={
+                  <Button variant="ghost" size="icon-xs" aria-label={`Elimina ${c.name}`}>
+                    <Trash2 />
+                  </Button>
+                }
+                title={`Eliminare la categoria «${c.name}»?`}
+                description="Gli ingredienti di questa categoria resteranno senza categoria."
+                onConfirm={() => del.mutate(c.id)}
+              />
+            </Badge>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

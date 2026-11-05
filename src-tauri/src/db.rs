@@ -30,6 +30,7 @@ const MIGRATIONS: &[&str] = &[
     include_str!("../migrations/013_meal_recipes_side.sql"),
     include_str!("../migrations/014_drop_planned_coefficient.sql"),
     include_str!("../migrations/015_drop_recipe_steps.sql"),
+    include_str!("../migrations/016_ingredient_categories.sql"),
 ];
 
 pub struct Db {
@@ -263,6 +264,19 @@ mod tests {
         )
         .unwrap();
         assert!(conn.execute("DELETE FROM ingredients WHERE id = 'i1'", []).is_err());
+    }
+
+    #[test]
+    fn deleting_a_category_clears_it_from_ingredients() {
+        let conn = mem();
+        conn.execute_batch(
+            "INSERT INTO ingredient_categories (id, name) VALUES ('c1', 'Verdura');
+             INSERT INTO ingredients (id, name, category_id) VALUES ('i1', 'Zucchine', 'c1');
+             DELETE FROM ingredient_categories WHERE id = 'c1';",
+        )
+        .unwrap();
+        let r = run_query(&conn, &q("SELECT category_id FROM ingredients WHERE id = 'i1'", vec![], Method::Get)).unwrap();
+        assert_eq!(r.rows, serde_json::json!([null]));
     }
 
     #[test]
