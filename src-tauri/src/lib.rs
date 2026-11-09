@@ -10,6 +10,12 @@ fn save_text_file(path: PathBuf, contents: String) -> Result<(), String> {
     std::fs::write(path, contents).map_err(|e| e.to_string())
 }
 
+/// Writes bytes to a path the user picked in a save dialog (used for PDF sharing).
+#[tauri::command]
+fn save_binary_file(path: PathBuf, contents: Vec<u8>) -> Result<(), String> {
+    std::fs::write(path, contents).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -28,6 +34,7 @@ pub fn run() {
             db::db_backup,
             db::db_restore,
             save_text_file,
+            save_binary_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

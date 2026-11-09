@@ -69,7 +69,7 @@ import { useMeals } from "@/features/meals/api";
 import { MealFilter } from "@/features/meals/meal-filter";
 import { useSettings } from "@/features/settings/api";
 import { plannedExceedsGuests, useCopyPlanned, useDeletePlanned, useMovePlanned, usePlanned, usePlannedForMeal, type PlannedEntry } from "./api";
-import { PlannedDetail, PlannedQuantities } from "./planned-detail";
+import { PlannedDetail, PlannedQuantities, SharePlannedButton } from "./planned-detail";
 
 export type PlannerView = "month" | "week" | "day";
 /** `meal` filters the planner to one menu and lists the days it is planned. */
@@ -226,6 +226,7 @@ export function PlannerPage() {
                     <CalendarDays /> Apri il giorno nel calendario
                   </Button>
                 )}
+                <SharePlannedButton entry={selected} />
                 <EntryActions entry={selected} onEdit={() => edit(selected)} onDeleted={() => setSelectedId(null)} />
               </SheetFooter>
             </>

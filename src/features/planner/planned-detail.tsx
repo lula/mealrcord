@@ -8,9 +8,10 @@ import { aggregate, displayQuantity, formatNumber, formatQuantity, type Aggregat
 import { plannedLines, scalePlanned, scalePlannedDishes, type ScalableEntry, type ScaledRecipe } from "./api";
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Copy, Share2 } from "lucide-react";
-import { sendEmail } from "@/lib/share";
-import { toast } from "sonner";
+import { Share2 } from "lucide-react";
+import { sharePdf } from "@/lib/share";
+import { plannedMenuPdf, plannedTitle } from "./pdf";
+import type { PlannedEntry } from "./api";
 
 function SectionTitle({ title, coefficient, action }: { title: string; coefficient: number, action?: React.ReactNode }) {
   return (
@@ -150,29 +151,11 @@ export function IngredientCategories({ entry }: { entry: ScalableEntry }) {
 export function LinesByCategory({ lines, className }: { lines: AggregatedLine[]; className?: string }) {
   const groups = useGroupByCategory(lines);
 
-  const title = (categoryName: string) => `Lista della spesa ${categoryName}`;
-
-  const asText = (groupTitle: string, lines: AggregatedLine[]) => {
-    const item = (l: (typeof lines)[number]) => `- ${l.ingredientName}: ${formatQuantity(l.quantity, l.unit)}`;
-    const body = lines.map(item);
-    return [groupTitle, "", ...body].join("\n");
-  };
-
   return (
     <div className={cn("space-y-4", className)}>
       {groups.map((g) => (
         <section key={g.id ?? "none"} className="space-y-2">
-          <SectionTitle title={g.name} coefficient={1} action={<>
-            <Button variant="ghost" size="icon-xs" onClick={async () => {
-              await navigator.clipboard.writeText(asText(title(g.name), g.lines));
-              toast.success("Lista copiata");
-            }}>
-              <Copy />
-            </Button>
-            <Button variant="ghost" size="icon-xs" onClick={() => sendEmail(title(g.name), asText(title(g.name), g.lines))}>
-              <Share2 />
-            </Button>
-          </>} />
+          <SectionTitle title={g.name} coefficient={1} />
           <div className="rounded-lg border">
             <Table>
               <TableBody>
@@ -188,5 +171,14 @@ export function LinesByCategory({ lines, className }: { lines: AggregatedLine[];
         </section>
       ))}
     </div>
+  );
+}
+
+/** Saves a PDF of a planned menu: composition, shopping list and recipe preparations. */
+export function SharePlannedButton({ entry }: { entry: PlannedEntry }) {
+  return (
+    <Button variant="outline" size="sm" onClick={() => sharePdf(plannedTitle(entry), plannedMenuPdf(entry))}>
+      <Share2 /> Condividi PDF
+    </Button>
   );
 }

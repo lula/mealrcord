@@ -2,8 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { addWeeks, endOfWeek, format, parseISO, startOfWeek } from "date-fns";
 import type { DateRange } from "react-day-picker";
-import { CalendarIcon, Copy, Share2, ShoppingCart } from "lucide-react";
-import { toast } from "sonner";
+import { CalendarIcon, Share2, ShoppingCart } from "lucide-react";
 import { PageBody, PageHeader } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -16,7 +15,8 @@ import { LinesByCategory } from "@/features/planner/planned-detail";
 import { plannedLines, usePlanned } from "@/features/planner/api";
 import { aggregate, formatQuantity } from "@/lib/units";
 import { cn } from "@/lib/utils";
-import { sendEmail } from "@/lib/share";
+import { sharePdf } from "@/lib/share";
+import { shoppingListPdf } from "@/features/planner/pdf";
 
 export type ShoppingSearch = { from?: string; to?: string };
 
@@ -42,39 +42,19 @@ export function ShoppingPage() {
   const setRange = (f: Date, t: Date) => navigate({ search: { from: iso(f), to: iso(t) } });
   const thisWeek = startOfWeek(new Date());
 
-  // The copied text follows the selected view.
-  const title = `Lista della spesa ${format(parseISO(from), "d/M")}–${format(parseISO(to), "d/M/yyyy")}`;
+  const title = `Lista della spesa ${format(parseISO(from), "d-M")} – ${format(parseISO(to), "d-M-yyyy")}`;
+  const share = () =>
+    sharePdf(title, shoppingListPdf("Lista della spesa", `${format(parseISO(from), "d/M")} – ${format(parseISO(to), "d/M/yyyy")}`, `${entries.length} menu pianificati`, lines, groups));
 
-  const asText = () => {
-    const item = (l: (typeof lines)[number]) => `- ${l.ingredientName}: ${formatQuantity(l.quantity, l.unit)}`;
-    const body = view === "total" ? lines.map(item) : groups.flatMap((g, i) => [...(i ? [""] : []), `${g.name}:`, ...g.lines.map(item)]);
-    return [title, "", ...body].join("\n");
-  };
-  
   return (
     <>
       <PageHeader
         title="Lista della spesa"
         description={`${entries.length} menu pianificati nel periodo`}
         actions={
-          <>
-            <Button
-              variant="outline"
-              disabled={!lines.length}
-              onClick={async () => {
-                await navigator.clipboard.writeText(asText());
-                toast.success("Lista copiata");
-              }}
-            >
-              <Copy /> Copia
-            </Button>
-            {/* <Button variant="outline" disabled={!lines.length} onClick={() => window.print()}>
-              <Printer /> Stampa
-            </Button> */}
-            <Button variant="outline" disabled={!lines.length} onClick={() => sendEmail(title, asText())}>
-              <Share2 /> Condividi
-            </Button>
-          </>
+          <Button variant="outline" disabled={!lines.length} onClick={share}>
+            <Share2 /> Condividi PDF
+          </Button>
         }
       />
       <PageBody className="space-y-4">

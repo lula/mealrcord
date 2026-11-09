@@ -27,3 +27,13 @@ export function toPlainText(value: string): string {
   doc.querySelectorAll("p, li, br, h1, h2, h3").forEach((el) => el.append(" "));
   return (doc.body.textContent ?? "").replace(/\s+/g, " ").trim();
 }
+
+/** Plain text keeping paragraphs and list items on their own lines, for PDFs. */
+export function toPlainParagraphs(value: string): string {
+  if (!value || !isHtml(value)) return value;
+  const doc = new DOMParser().parseFromString(DOMPurify.sanitize(value), "text/html");
+  doc.querySelectorAll("br").forEach((el) => el.replaceWith("\n"));
+  doc.querySelectorAll("li").forEach((el) => el.prepend("• "));
+  doc.querySelectorAll("p, li, h1, h2, h3, h4, blockquote").forEach((el) => el.append("\n"));
+  return (doc.body.textContent ?? "").replace(/[ \t]+/g, " ").replace(/\n /g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+}
