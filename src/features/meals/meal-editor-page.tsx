@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { ArrowLeft, Copy, Lock, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { PageBody, PageHeader } from "@/components/page";
+import { useUnsavedChangesGuard } from "@/components/unsaved-changes-guard";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -69,8 +70,11 @@ export function MealEditorPage() {
     form.reset({ name: meal.name, notes: meal.notes, courses: byCourse, dishIds: meal.dishes.map((d) => d.dishId) });
   }, [meal, form]);
 
+  const guard = useUnsavedChangesGuard(form.formState.isDirty);
+
   const onSubmit = form.handleSubmit(async (values) => {
     await save.mutateAsync({ id: mealId, ...values });
+    guard.allowNavigation();
     navigate({ to: "/meals" });
   });
 
@@ -301,6 +305,7 @@ export function MealEditorPage() {
       </PageBody>
       <RecipeDetailDialog recipeId={viewing} onClose={() => setViewing(null)} />
       <DishDetailDialog dishId={viewingDish} onClose={() => setViewingDish(null)} />
+      {guard.dialog}
     </form>
   );
 }

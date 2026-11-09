@@ -10,6 +10,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageBody, PageHeader } from "@/components/page";
+import { useUnsavedChangesGuard } from "@/components/unsaved-changes-guard";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { ProposedNumberInput } from "@/components/proposed-number-input";
 import { Input } from "@/components/ui/input";
@@ -77,6 +78,8 @@ export function PlannedEditorPage() {
   const saveOnDays = useSavePlannedOnDays();
   // New plans only: days of the chosen date's week to plan on (the chosen date is preselected).
   const [days, setDays] = useState<string[]>([]);
+  // Days aren't form fields: track whether the user changed them.
+  const [daysEdited, setDaysEdited] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const form = useForm<FormValues>({ resolver: zodResolver(schema) });
   // Recipes whose guests the user set; the others follow the even split.
@@ -193,6 +196,8 @@ export function PlannedEditorPage() {
 
   const dishTotal = mealDishes.reduce((n, d) => n + (Number(dishGuestValues[d.dishId]) || 0), 0);
 
+  const guard = useUnsavedChangesGuard(form.formState.isDirty || daysEdited);
+
   const onSubmit = form.handleSubmit(async (formValues) => {
     // Keep overrides only for courses, recipes and dishes the chosen menu has.
     const courseCoefficients = Object.fromEntries(mealCourses.map((c) => [c, formValues.courseCoefficients[c]]));
@@ -201,6 +206,7 @@ export function PlannedEditorPage() {
     const values = { ...formValues, courseCoefficients, recipeGuests, dishGuests, dishCoefficient: mealDishes.length ? formValues.dishCoefficient : null };
     if (entry) {
       await save.mutateAsync({ id: entry.id, ...values });
+      guard.allowNavigation();
       close(values.date);
       return;
     }
@@ -210,6 +216,7 @@ export function PlannedEditorPage() {
       return;
     }
     await saveOnDays.mutateAsync({ ...values, dates });
+    guard.allowNavigation();
     close(dates[0]);
   });
 
@@ -319,7 +326,12 @@ export function PlannedEditorPage() {
                 {!entry && week.length > 0 && (
                   <Field>
                     <FieldLabel>Giorni della settimana</FieldLabel>
-                    <ToggleGroup type="multiple" variant="outline" className="grid w-full grid-cols-7" value={days} onValueChange={setDays}>
+                    <ToggleGroup type="multiple" variant="outline" className="grid w-full grid-cols-7" value={days}
+                      onValueChange={(v) => {
+                        setDays(v);
+                        setDaysEdited(true);
+                      }}
+                    >
                       {week.map((d) => {
                         const taken = isTaken(d, mealId);
                         const past = d <= today;
@@ -589,6 +601,7 @@ export function PlannedEditorPage() {
           </CardContent>
         </Card>
       </PageBody>
+      {guard.dialog}
     </form>
   );
 }

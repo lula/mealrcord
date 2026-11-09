@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { ArrowLeft, Pencil, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { PageBody, PageHeader } from "@/components/page";
+import { useUnsavedChangesGuard } from "@/components/unsaved-changes-guard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -64,8 +65,11 @@ export function RecipeEditorPage() {
     form.reset(recipe ? toForm(recipe) : EMPTY);
   }, [recipe, form]);
 
+  const guard = useUnsavedChangesGuard(form.formState.isDirty);
+
   const onSubmit = form.handleSubmit(async (values) => {
     await save.mutateAsync({ id: recipeId, ...values });
+    guard.allowNavigation();
     navigate({ to: "/recipes" });
   });
 
@@ -236,6 +240,7 @@ export function RecipeEditorPage() {
         </Card>
 
       </PageBody>
+      {guard.dialog}
     </form>
     <IngredientDialog value={editingIngredient} onClose={() => setEditingIngredientId(null)} />
     </>

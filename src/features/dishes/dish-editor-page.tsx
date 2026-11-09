@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { ArrowDown, ArrowLeft, ArrowUp, Plus, RotateCcw, Save, X } from "lucide-react";
 import { PageBody, PageHeader } from "@/components/page";
+import { useUnsavedChangesGuard } from "@/components/unsaved-changes-guard";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,8 +88,11 @@ export function DishEditorPage() {
     });
   }, [dishCoefficient, editedVersion, form]);
 
+  const guard = useUnsavedChangesGuard(form.formState.isDirty);
+
   const onSubmit = form.handleSubmit(async (values) => {
     await save.mutateAsync({ id: dishId, ...values });
+    guard.allowNavigation();
     navigate({ to: "/dishes" });
   });
 
@@ -259,11 +263,13 @@ export function DishEditorPage() {
           form.setValue(
             "recipes",
             next.map((recipeId) => ({ recipeId, coefficient: current.get(recipeId) ?? preset })),
+            { shouldDirty: true },
           );
           form.clearErrors("recipes");
         }}
       />
       <RecipeDetailDialog recipeId={viewing} onClose={() => setViewing(null)} />
+      {guard.dialog}
     </form>
   );
 }
