@@ -2,8 +2,9 @@ import { useMemo, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { addWeeks, endOfWeek, format, parseISO, startOfWeek } from "date-fns";
 import type { DateRange } from "react-day-picker";
-import { CalendarIcon, Share2, ShoppingCart } from "lucide-react";
+import { CalendarIcon, ShoppingCart } from "lucide-react";
 import { PageBody, PageHeader } from "@/components/page";
+import { ShareMenu } from "@/components/share-menu";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
@@ -15,8 +16,8 @@ import { LinesByCategory } from "@/features/planner/planned-detail";
 import { plannedLines, usePlanned } from "@/features/planner/api";
 import { aggregate, formatQuantity } from "@/lib/units";
 import { cn } from "@/lib/utils";
-import { sharePdf } from "@/lib/share";
-import { shoppingListPdf } from "@/features/planner/pdf";
+import { sharePdf, shareText } from "@/lib/share";
+import { shoppingListPdf, shoppingListText } from "@/features/planner/pdf";
 
 export type ShoppingSearch = { from?: string; to?: string };
 
@@ -43,8 +44,7 @@ export function ShoppingPage() {
   const thisWeek = startOfWeek(new Date());
 
   const title = `Lista della spesa ${format(parseISO(from), "d-M")} – ${format(parseISO(to), "d-M-yyyy")}`;
-  const share = () =>
-    sharePdf(title, shoppingListPdf("Lista della spesa", `${format(parseISO(from), "d/M")} – ${format(parseISO(to), "d/M/yyyy")}`, `${entries.length} menu pianificati`, lines, groups));
+  const docArgs = ["Lista della spesa", `${format(parseISO(from), "d/M")} – ${format(parseISO(to), "d/M/yyyy")}`, `${entries.length} menu pianificati`, lines, groups] as const;
 
   return (
     <>
@@ -52,9 +52,11 @@ export function ShoppingPage() {
         title="Lista della spesa"
         description={`${entries.length} menu pianificati nel periodo`}
         actions={
-          <Button variant="outline" disabled={!lines.length} onClick={share}>
-            <Share2 /> Condividi PDF
-          </Button>
+          <ShareMenu
+            disabled={!lines.length}
+            onPdf={() => sharePdf(title, shoppingListPdf(...docArgs))}
+            onText={() => shareText(title, shoppingListText(...docArgs))}
+          />
         }
       />
       <PageBody className="space-y-4">

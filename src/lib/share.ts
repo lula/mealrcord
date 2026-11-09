@@ -19,3 +19,16 @@ export const sharePdf = async (title: string, pdf: PdfWriter) => {
     toast.error(`Impossibile creare il PDF: ${e}`);
   }
 };
+
+/** Same as `sharePdf`, for a plain text note (.txt). */
+export const shareText = async (title: string, text: string) => {
+  try {
+    const path = await saveDialog({ defaultPath: fileName(title, "txt"), filters: [{ name: "Testo", extensions: ["txt"] }] });
+    if (!path) return;
+    await invoke("save_text_file", { path, contents: text });
+    await revealItemInDir(path);
+    toast.success("Nota salvata");
+  } catch (e) {
+    toast.error(`Impossibile creare la nota: ${e}`);
+  }
+};

@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
 import appIcon from "@/assets/app-icon.png?inline";
+import type { DocWriter } from "@/lib/doc-writer";
 
 const APP_NAME = "mealrcord";
 const MARGIN = 15;
@@ -17,7 +18,7 @@ const BORDER: [number, number, number] = [220, 220, 220];
  * Small top-to-bottom writer over jsPDF: headings, paragraphs and two-column
  * tables, with page breaks handled for us.
  */
-export class PdfWriter {
+export class PdfWriter implements DocWriter {
   readonly doc = new jsPDF({ unit: "mm", format: "a4" });
   private y = TOP;
   /** Page of each anchor, and the clickable areas pointing to them (resolved in `bytes`). */
@@ -255,5 +256,6 @@ export class PdfWriter {
   }
 }
 
-/** A name safe for every file system: "Lista della spesa 3/11" -> "Lista della spesa 3-11". */
-export const fileName = (title: string) => `${title.replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, " ").trim()}.pdf`;
+/** A name safe for every file system: "Lista della spesa 3/11" -> "Lista della spesa 3-11.pdf". */
+export const fileName = (title: string, extension = "pdf") =>
+  `${title.replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, " ").trim()}.${extension}`;

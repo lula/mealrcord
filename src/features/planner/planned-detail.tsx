@@ -7,10 +7,9 @@ import { COURSE_LABELS } from "@/features/meals/api";
 import { aggregate, displayQuantity, formatNumber, formatQuantity, type AggregatedLine } from "@/lib/units";
 import { plannedLines, scalePlanned, scalePlannedDishes, type ScalableEntry, type ScaledRecipe } from "./api";
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { Share2 } from "lucide-react";
-import { sharePdf } from "@/lib/share";
-import { plannedMenuPdf, plannedTitle } from "./pdf";
+import { sharePdf, shareText } from "@/lib/share";
+import { ShareMenu } from "@/components/share-menu";
+import { plannedMenuPdf, plannedMenuText, plannedTitle } from "./pdf";
 import type { PlannedEntry } from "./api";
 
 function SectionTitle({ title, coefficient, action }: { title: string; coefficient: number, action?: React.ReactNode }) {
@@ -174,11 +173,13 @@ export function LinesByCategory({ lines, className }: { lines: AggregatedLine[];
   );
 }
 
-/** Saves a PDF of a planned menu: composition, shopping list and recipe preparations. */
+/** Saves a PDF or a text note of a planned menu: composition, shopping list and recipe preparations. */
 export function SharePlannedButton({ entry }: { entry: PlannedEntry }) {
   return (
-    <Button variant="outline" size="sm" onClick={() => sharePdf(plannedTitle(entry), plannedMenuPdf(entry))}>
-      <Share2 /> Condividi PDF
-    </Button>
+    <ShareMenu
+      size="sm"
+      onPdf={() => sharePdf(plannedTitle(entry), plannedMenuPdf(entry))}
+      onText={() => shareText(plannedTitle(entry), plannedMenuText(entry))}
+    />
   );
 }

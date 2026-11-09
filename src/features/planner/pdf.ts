@@ -1,6 +1,7 @@
 import { format, parseISO } from "date-fns";
 import { it } from "date-fns/locale";
 import { COURSE_LABELS } from "@/features/meals/api";
+import { TextWriter, type DocWriter } from "@/lib/doc-writer";
 import { PdfWriter } from "@/lib/pdf";
 import { toPlainParagraphs } from "@/lib/rich-text";
 import { aggregate, displayQuantity, formatNumber, formatQuantity, type AggregatedLine } from "@/lib/units";
@@ -10,7 +11,13 @@ type Group = { name: string; lines: AggregatedLine[] };
 
 const rows = (lines: AggregatedLine[]): [string, string][] => lines.map((l) => [l.ingredientName, formatQuantity(l.quantity, l.unit)]);
 
-function categoriesSection(pdf: PdfWriter, groups: Group[]) {
+/** Creates the writer of the chosen format; `context` describes the document (header of each page, first line of a note). */
+type MakeWriter<W extends DocWriter> = (context: string) => W;
+
+const pdfWriter = (context: string) => new PdfWriter(context);
+const textWriter = (context: string) => new TextWriter(context);
+
+function categoriesSection(pdf: DocWriter, groups: Group[]) {
   for (const g of groups) {
     pdf.heading(g.name, 2);
     pdf.table(rows(g.lines));
@@ -18,8 +25,8 @@ function categoriesSection(pdf: PdfWriter, groups: Group[]) {
 }
 
 /** Shopping list of a period: the full list, then the same list by category. */
-export function shoppingListPdf(title: string, period: string, subtitle: string, lines: AggregatedLine[], groups: Group[]) {
-  const pdf = new PdfWriter(`${title} · ${period}`);
+function shoppingList<W extends DocWriter>(make: MakeWriter<W>, title: string, period: string, subtitle: string, lines: AggregatedLine[], groups: Group[]) {
+  const pdf = make(`${title} · ${period}`);
   pdf.title(title);
   pdf.subtitle(`${period} · ${subtitle}`);
   pdf.heading("Totale");
@@ -30,13 +37,18 @@ export function shoppingListPdf(title: string, period: string, subtitle: string,
   return pdf;
 }
 
+export const shoppingListPdf = (title: string, period: string, subtitle: string, lines: AggregatedLine[], groups: Group[]) =>
+  shoppingList(pdfWriter, title, period, subtitle, lines, groups);
+export const shoppingListText = (title: string, period: string, subtitle: string, lines: AggregatedLine[], groups: Group[]) =>
+  shoppingList(textWriter, title, period, subtitle, lines, groups).toString();
+
 export const plannedTitle = (entry: PlannedEntry) => `${entry.slot} ${entry.meal.name} ${format(parseISO(entry.date), "d-M-yyyy")}`;
 
 /**
  * One planned menu: its composition, then (new page) the shopping list total and
  * per recipe, then one page per recipe with its preparation.
  */
-export function plannedMenuPdf(entry: PlannedEntry) {
+function plannedMenu<W extends DocWriter>(make: MakeWriter<W>, entry: PlannedEntry) {
   const descriptions = new Map<string, string>([
     ...entry.meal.recipes.map(({ recipe }) => [recipe.id, recipe.description] as const),
     ...entry.meal.dishes.flatMap(({ dish }) => dish.recipes.map(({ recipe }) => [recipe.id, recipe.description] as const)),
@@ -58,7 +70,7 @@ export function plannedMenuPdf(entry: PlannedEntry) {
     ...(dishes?.dishes.flatMap((d) => d.recipes.map((r) => ({ recipe: r, key: dishKey(d, r), context: dishMeta(d, r) }))) ?? []),
   ];
 
-  const pdf = new PdfWriter(`${entry.meal.name} del ${format(parseISO(entry.date), "dd/MM/yyyy")} ${entry.slot.toLowerCase()}`);
+  const pdf = make(`${entry.meal.name} del ${format(parseISO(entry.date), "dd/MM/yyyy")} ${entry.slot.toLowerCase()}`);
   pdf.cover(entry.meal.name, `${format(parseISO(entry.date), "EEEE d MMMM yyyy", { locale: it })}`, `${entry.slot}`, `${entry.guests} coperti`);
 
   // 1. Menu composition
@@ -102,3 +114,6 @@ export function plannedMenuPdf(entry: PlannedEntry) {
   }
   return pdf;
 }
+
+export const plannedMenuPdf = (entry: PlannedEntry) => plannedMenu(pdfWriter, entry);
+export const plannedMenuText = (entry: PlannedEntry) => plannedMenu(textWriter, entry).toString();
