@@ -11,12 +11,14 @@ import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AllergenBadges, AllergenPicker } from "@/features/allergens/allergen-picker";
+import { useAllergens } from "@/features/allergens/api";
 import { useUnits } from "@/features/units/api";
 import { UnitSelect } from "@/features/units/unit-select";
 import { DEFAULT_UNIT_ID } from "@/lib/units";
-import { useDeleteIngredient, useIngredientCategories, useIngredients, useUpdateIngredient } from "./api";
+import { useDeleteIngredient, useIngredientCategories, useIngredients, useUpdateIngredient, type IngredientUpdate } from "./api";
 
-type IngredientDraft = { id: string; name: string; defaultUnitId: string | null; categoryId: string | null };
+type IngredientDraft = IngredientUpdate;
 
 // Radix Select does not accept an empty value. Also used as the "no category" filter.
 const NO_CATEGORY = "__none";
@@ -32,9 +34,12 @@ export function IngredientsPage() {
   const del = useDeleteIngredient();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState(ALL_CATEGORIES);
+  const [allergenIds, setAllergenIds] = useState<string[]>([]);
+  const { data: allergens = [] } = useAllergens();
 
   const unitSymbol = new Map(units.map((u) => [u.id, u.symbol]));
   const categoryName = new Map(categories.map((c) => [c.id, c.name]));
+  const allergensOf = (ids: string[]) => allergens.filter((a) => ids.includes(a.id));
   const editing = ingredients.find((i) => i.id === ingredientId) ?? null;
 
   const filtered = useMemo(() => {
@@ -42,9 +47,10 @@ export function IngredientsPage() {
     return ingredients.filter(
       (i) =>
         (!q || i.name.toLowerCase().includes(q)) &&
-        (category === ALL_CATEGORIES || (category === NO_CATEGORY ? !i.categoryId : i.categoryId === category)),
+        (category === ALL_CATEGORIES || (category === NO_CATEGORY ? !i.categoryId : i.categoryId === category)) &&
+        allergenIds.every((id) => i.allergenIds.includes(id)),
     );
-  }, [ingredients, search, category]);
+  }, [ingredients, search, category, allergenIds]);
 
   return (
     <>
@@ -83,8 +89,9 @@ export function IngredientsPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {(search || category !== ALL_CATEGORIES) && (
-                <Button variant="outline" onClick={() => (setSearch(""), setCategory(ALL_CATEGORIES))}>
+              <AllergenPicker value={allergenIds} onChange={setAllergenIds} placeholder="Filtra per allergeni" />
+              {(search || category !== ALL_CATEGORIES || allergenIds.length > 0) && (
+                <Button variant="outline" onClick={() => (setSearch(""), setCategory(ALL_CATEGORIES), setAllergenIds([]))}>
                   <X />
                   Rimuovi filtri
                 </Button>
@@ -96,6 +103,7 @@ export function IngredientsPage() {
                   <TableRow>
                     <TableHead>Nome</TableHead>
                     <TableHead>Categoria</TableHead>
+                    <TableHead>Allergeni</TableHead>
                     <TableHead>Unità predefinita</TableHead>
                     <TableHead className="text-right">Ricette</TableHead>
                     <TableHead className="w-24" />
@@ -104,7 +112,7 @@ export function IngredientsPage() {
                 <TableBody>
                   {filtered.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-muted-foreground h-20 text-center">
+                      <TableCell colSpan={6} className="text-muted-foreground h-20 text-center">
                         Nessun ingrediente trovato.
                       </TableCell>
                     </TableRow>
@@ -113,6 +121,9 @@ export function IngredientsPage() {
                     <TableRow key={i.id}>
                       <TableCell className="font-medium">{i.name}</TableCell>
                       <TableCell>{i.categoryId ? categoryName.get(i.categoryId) : <span className="text-muted-foreground">—</span>}</TableCell>
+                      <TableCell>
+                        <AllergenBadges allergens={allergensOf(i.allergenIds)} />
+                      </TableCell>
                       <TableCell>{unitSymbol.get(i.defaultUnitId ?? DEFAULT_UNIT_ID)}</TableCell>
                       <TableCell className="text-right tabular-nums">{i.usage}</TableCell>
                       <TableCell className="text-right">
@@ -183,6 +194,10 @@ export function IngredientDialog({ value, onClose }: { value: IngredientDraft | 
                   </SelectContent>
                 </Select>
                 {categories.length === 0 && <FieldDescription>Crea le categorie in Impostazioni → Categorie.</FieldDescription>}
+              </Field>
+              <Field>
+                <FieldLabel>Allergeni</FieldLabel>
+                <AllergenPicker value={draft.allergenIds} onChange={(ids) => setDraft({ ...draft, allergenIds: ids })} allowCreate placeholder="Aggiungi allergeni" />
               </Field>
             </FieldGroup>
           )}

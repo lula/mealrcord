@@ -31,6 +31,8 @@ const MIGRATIONS: &[&str] = &[
     include_str!("../migrations/014_drop_planned_coefficient.sql"),
     include_str!("../migrations/015_drop_recipe_steps.sql"),
     include_str!("../migrations/016_ingredient_categories.sql"),
+    include_str!("../migrations/017_allergens.sql"),
+    include_str!("../migrations/018_ingredient_allergens.sql"),
 ];
 
 pub struct Db {

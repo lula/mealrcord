@@ -8,13 +8,15 @@ import { PageBody, PageHeader } from "@/components/page";
 import { useUnsavedChangesGuard } from "@/components/unsaved-changes-guard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { useIngredients } from "@/features/ingredients/api";
 import { IngredientCombobox } from "@/features/ingredients/ingredient-combobox";
 import { IngredientDialog } from "@/features/ingredients/ingredients-page";
+import { useAllergens } from "@/features/allergens/api";
+import { AllergenBadges } from "@/features/allergens/allergen-picker";
 import { TagPicker } from "@/features/tags/tag-picker";
 import { UnitSelect } from "@/features/units/unit-select";
 import { DEFAULT_UNIT_ID } from "@/lib/units";
@@ -57,6 +59,7 @@ export function RecipeEditorPage() {
   const form = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: EMPTY });
   const lines = useFieldArray({ control: form.control, name: "ingredients" });
   const { data: ingredients = [] } = useIngredients();
+  const { data: allergens = [] } = useAllergens();
   // Ingredient whose edit dialog is open (edited in place, the recipe form is kept).
   const [editingIngredientId, setEditingIngredientId] = useState<string | null>(null);
   const editingIngredient = ingredients.find((i) => i.id === editingIngredientId) ?? null;
@@ -74,6 +77,9 @@ export function RecipeEditorPage() {
   });
 
   const used = form.watch("ingredients").map((i) => i.ingredientId);
+  // Allergens of the ingredients currently in the form.
+  const allergenIdsInUse = new Set(ingredients.filter((i) => used.includes(i.id)).flatMap((i) => i.allergenIds));
+  const recipeAllergens = allergens.filter((a) => allergenIdsInUse.has(a.id));
 
   if (recipeId && isLoading) {
     return (
@@ -142,6 +148,15 @@ export function RecipeEditorPage() {
                     name="tagIds"
                     render={({ field }) => <TagPicker value={field.value} onChange={field.onChange} allowCreate placeholder="Aggiungi tag" />}
                   />
+                </Field>
+                <Field>
+                  <FieldLabel>Allergeni</FieldLabel>
+                  {recipeAllergens.length > 0 ? (
+                    <AllergenBadges allergens={recipeAllergens} />
+                  ) : (
+                    <p className="text-muted-foreground text-sm">Nessuno.</p>
+                  )}
+                  <FieldDescription>Derivati dagli ingredienti. Si modificano dalla scheda dell'ingrediente.</FieldDescription>
                 </Field>
               </FieldGroup>
             </CardContent>

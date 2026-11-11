@@ -38,7 +38,7 @@ export function TagPicker({
   return (
     <Popover open={open} onOpenChange={(o) => (setOpen(o), o || setSearch(""))}>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="justify-start gap-1.5 py-1.5 font-normal">
+        <Button variant="outline" className="h-auto min-h-8 justify-start gap-1.5 py-1.5 font-normal whitespace-normal">
           <Tags className="text-muted-foreground" />
           {selected.length === 0 ? (
             <span className="text-muted-foreground">{placeholder}</span>

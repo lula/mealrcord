@@ -8,6 +8,7 @@ vi.mock("sonner", () => ({ toast: { success: () => {}, error: () => {} } }));
 
 const { saveRecipe, getRecipe, mealsUsingRecipe } = await import("@/features/recipes/api");
 const { createIngredient, createIngredientCategory, listIngredients, updateIngredient } = await import("@/features/ingredients/api");
+const { createAllergen } = await import("@/features/allergens/api");
 const { saveMeal, duplicateMeal, plannedUsageCount } = await import("@/features/meals/api");
 const { db } = await import("./client");
 const { mealRecipes, plannedMeals } = await import("./schema");
@@ -19,8 +20,8 @@ beforeEach(() => {
 });
 
 async function seed() {
-  const flour = await createIngredient({ name: "Farina", defaultUnitId: "unit-g" });
-  const eggs = await createIngredient({ name: "Uova" });
+  const flour = await createIngredient({ name: "Farina", defaultUnitId: "unit-g", allergenIds: ["allergen-gluten"] });
+  const eggs = await createIngredient({ name: "Uova", allergenIds: [await createAllergen("Uova")] });
   const pasta = await saveRecipe({
     name: "Tagliatelle",
     description: "",
@@ -81,9 +82,11 @@ describe("ingredient categories", () => {
     const find = async () => (await listIngredients()).find((i) => i.id === zucchine)!;
 
     expect((await find()).categoryId).toBe(veg);
-    await updateIngredient({ id: zucchine, name: "Zucchine", defaultUnitId: "unit-g", categoryId: summer });
+    await updateIngredient({ id: zucchine, name: "Zucchine", defaultUnitId: "unit-g", categoryId: summer, allergenIds: ["allergen-celery"] });
+    expect((await find()).allergenIds).toEqual(["allergen-celery"]);
     expect((await find()).categoryId).toBe(summer);
-    await updateIngredient({ id: zucchine, name: "Zucchine", defaultUnitId: "unit-g", categoryId: null });
+    await updateIngredient({ id: zucchine, name: "Zucchine", defaultUnitId: "unit-g", categoryId: null, allergenIds: [] });
+    expect((await find()).allergenIds).toEqual([]);
     expect((await find()).categoryId).toBeNull();
   });
 
@@ -126,6 +129,7 @@ describe("data layer", () => {
     expect(r?.ingredients.map((i) => i.ingredient.name)).toEqual(["Farina", "Uova"]);
     expect(r?.ingredients[0].unit.symbol).toBe("g");
     expect(r?.tags.map((t) => t.tag.name)).toEqual(["Primo"]);
+    expect(r?.allergens.map((a) => a.name)).toEqual(["Glutine", "Uova"]);
   });
 
   it("replaces ingredients on update", async () => {
@@ -135,6 +139,8 @@ describe("data layer", () => {
     expect(r?.baseServings).toBe(2);
     expect(r?.ingredients).toHaveLength(1);
     expect(r?.tags).toHaveLength(0);
+    // Only the flour is left: its allergens only.
+    expect(r?.allergens.map((a) => a.name)).toEqual(["Glutine"]);
   });
 
   it("rolls back a failed batch", async () => {

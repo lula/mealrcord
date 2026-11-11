@@ -37,6 +37,11 @@ export function RecipeDetailDialog({ recipeId, onClose }: { recipeId: string | n
                     {t.tag.name}
                   </Badge>
                 ))}
+                {recipe.allergens.map((a) => (
+                  <Badge key={a.id} variant="destructive">
+                    {a.name}
+                  </Badge>
+                ))}
               </DialogDescription>
             </DialogHeader>
 

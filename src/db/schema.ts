@@ -78,6 +78,25 @@ export const recipeTags = sqliteTable(
   (t) => [primaryKey({ columns: [t.recipeId, t.tagId] })],
 );
 
+/** Allergens (e.g. Glutine, Sedano). Assigned to ingredients; a recipe has those of its ingredients. */
+export const allergens = sqliteTable("allergens", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+});
+
+export const ingredientAllergens = sqliteTable(
+  "ingredient_allergens",
+  {
+    ingredientId: text("ingredient_id")
+      .notNull()
+      .references(() => ingredients.id),
+    allergenId: text("allergen_id")
+      .notNull()
+      .references(() => allergens.id),
+  },
+  (t) => [primaryKey({ columns: [t.ingredientId, t.allergenId] })],
+);
+
 export const meals = sqliteTable("meals", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -218,6 +237,7 @@ export const ingredientsRelations = relations(ingredients, ({ one, many }) => ({
   defaultUnit: one(units, { fields: [ingredients.defaultUnitId], references: [units.id] }),
   category: one(ingredientCategories, { fields: [ingredients.categoryId], references: [ingredientCategories.id] }),
   recipeIngredients: many(recipeIngredients),
+  allergens: many(ingredientAllergens),
 }));
 
 export const ingredientCategoriesRelations = relations(ingredientCategories, ({ many }) => ({
@@ -244,6 +264,15 @@ export const tagsRelations = relations(tags, ({ many }) => ({
 export const recipeTagsRelations = relations(recipeTags, ({ one }) => ({
   recipe: one(recipes, { fields: [recipeTags.recipeId], references: [recipes.id] }),
   tag: one(tags, { fields: [recipeTags.tagId], references: [tags.id] }),
+}));
+
+export const allergensRelations = relations(allergens, ({ many }) => ({
+  ingredients: many(ingredientAllergens),
+}));
+
+export const ingredientAllergensRelations = relations(ingredientAllergens, ({ one }) => ({
+  ingredient: one(ingredients, { fields: [ingredientAllergens.ingredientId], references: [ingredients.id] }),
+  allergen: one(allergens, { fields: [ingredientAllergens.allergenId], references: [allergens.id] }),
 }));
 
 export const mealsRelations = relations(meals, ({ many }) => ({
@@ -296,6 +325,7 @@ export type Ingredient = typeof ingredients.$inferSelect;
 export type IngredientCategory = typeof ingredientCategories.$inferSelect;
 export type Recipe = typeof recipes.$inferSelect;
 export type Tag = typeof tags.$inferSelect;
+export type Allergen = typeof allergens.$inferSelect;
 export type Meal = typeof meals.$inferSelect;
 export type Dish = typeof dishes.$inferSelect;
 export type PlannedMeal = typeof plannedMeals.$inferSelect;

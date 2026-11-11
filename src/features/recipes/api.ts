@@ -4,26 +4,47 @@ import { db, newId, nowIso } from "@/db/client";
 import { dishes, dishRecipes, mealRecipes, meals, recipeIngredients, recipes, recipeTags } from "@/db/schema";
 import { useDbMutation } from "@/lib/query";
 
+type WithIngredientAllergens = { ingredients: { ingredient: { allergens: { allergen: { id: string; name: string } }[] } }[] };
+
+/** A recipe's allergens: those of its ingredients, without duplicates, by name. */
+export function allergensOf(r: WithIngredientAllergens) {
+  const byId = new Map(r.ingredients.flatMap((ri) => ri.ingredient.allergens.map((a) => [a.allergen.id, a.allergen] as const)));
+  return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export const useRecipes = () =>
   useQuery({
     queryKey: ["recipes"],
-    queryFn: () =>
-      db.query.recipes.findMany({
-        with: { tags: { with: { tag: true } } },
+    queryFn: async () => {
+      const rows = await db.query.recipes.findMany({
+        with: {
+          tags: { with: { tag: true } },
+          ingredients: {
+            columns: { ingredientId: true },
+            with: { ingredient: { columns: { id: true }, with: { allergens: { with: { allergen: true } } } } },
+          },
+        },
         orderBy: (r, { asc }) => [asc(r.name)],
-      }),
+      });
+      return rows.map((r) => ({ ...r, allergens: allergensOf(r) }));
+    },
   });
 
 export type RecipeListItem = NonNullable<ReturnType<typeof useRecipes>["data"]>[number];
 
-export const getRecipe = (id: string) =>
-  db.query.recipes.findFirst({
+export async function getRecipe(id: string) {
+  const r = await db.query.recipes.findFirst({
     where: eq(recipes.id, id),
     with: {
       tags: { with: { tag: true } },
-      ingredients: { with: { ingredient: true, unit: true }, orderBy: (ri, { asc }) => [asc(ri.position)] },
+      ingredients: {
+        with: { ingredient: { with: { allergens: { with: { allergen: true } } } }, unit: true },
+        orderBy: (ri, { asc }) => [asc(ri.position)],
+      },
     },
   });
+  return r && { ...r, allergens: allergensOf(r) };
+}
 
 export const useRecipe = (id: string | undefined) =>
   useQuery({ queryKey: ["recipe", id], queryFn: () => getRecipe(id!), enabled: !!id });

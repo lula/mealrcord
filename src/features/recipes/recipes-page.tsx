@@ -20,6 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { AllergenBadges, AllergenPicker } from "@/features/allergens/allergen-picker";
 import { TagBadges, TagPicker } from "@/features/tags/tag-picker";
 import { dishesUsingRecipe, mealsUsingRecipe, useDeleteRecipe, useDuplicateRecipe, useRecipes, type RecipeListItem } from "./api";
 import { format } from "date-fns";
@@ -30,6 +31,7 @@ export function RecipesPage() {
   const { data: recipes, isLoading } = useRecipes();
   const [search, setSearch] = useState("");
   const [tagIds, setTagIds] = useState<string[]>([]);
+  const [allergenIds, setAllergenIds] = useState<string[]>([]);
   const [toDelete, setToDelete] = useState<RecipeListItem | null>(null);
   const del = useDeleteRecipe();
   const duplicate = useDuplicateRecipe();
@@ -38,8 +40,8 @@ export function RecipesPage() {
 
   // Most recently changed first, PAGE_SIZE per page.
   const filtered = useMemo(
-    () => filterRecipes(recipes ?? [], search, tagIds).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
-    [recipes, search, tagIds],
+    () => filterRecipes(recipes ?? [], search, tagIds, allergenIds).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+    [recipes, search, tagIds, allergenIds],
   );
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -100,8 +102,9 @@ export function RecipesPage() {
                 <InputGroupInput placeholder="Cerca per nome…" value={search} onChange={(e) => (setSearch(e.target.value), setPage(1))} />
               </InputGroup>
               <TagPicker value={tagIds} onChange={(ids) => (setTagIds(ids), setPage(1))} placeholder="Filtra per tag" />
-              {(search || tagIds.length > 0) && (
-                <Button variant="outline" onClick={() => (setSearch(""), setTagIds([]), setPage(1))}>
+              <AllergenPicker value={allergenIds} onChange={(ids) => (setAllergenIds(ids), setPage(1))} placeholder="Filtra per allergeni" />
+              {(search || tagIds.length > 0 || allergenIds.length > 0) && (
+                <Button variant="outline" onClick={() => (setSearch(""), setTagIds([]), setAllergenIds([]), setPage(1))}>
                   <X />
                   Rimuovi filtri
                 </Button>
@@ -157,6 +160,7 @@ export function RecipesPage() {
                         <Users /> {r.baseServings} persone
                       </Badge> */}
                       <TagBadges tags={r.tags.map((t) => t.tag)} />
+                      <AllergenBadges allergens={r.allergens} />
                     </CardContent>
                   </Card>
                 ))}
@@ -187,10 +191,20 @@ export function RecipesPage() {
   );
 }
 
-/** Name contains `search` (case/accents ignored) and has every tag in `tagIds`. */
-export function filterRecipes<T extends { name: string; tags: { tagId: string }[] }>(recipes: T[], search: string, tagIds: string[]) {
+/** Name contains `search` (case/accents ignored), has every tag in `tagIds` and every allergen in `allergenIds`. */
+export function filterRecipes<T extends { name: string; tags: { tagId: string }[]; allergens?: { id: string }[] }>(
+  recipes: T[],
+  search: string,
+  tagIds: string[],
+  allergenIds: string[] = [],
+) {
   const q = normalize(search.trim());
-  return recipes.filter((r) => (!q || normalize(r.name).includes(q)) && tagIds.every((id) => r.tags.some((t) => t.tagId === id)));
+  return recipes.filter(
+    (r) =>
+      (!q || normalize(r.name).includes(q)) &&
+      tagIds.every((id) => r.tags.some((t) => t.tagId === id)) &&
+      allergenIds.every((id) => r.allergens?.some((a) => a.id === id)),
+  );
 }
 
 const normalize = (s: string) =>

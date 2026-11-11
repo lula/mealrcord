@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { backupDb, dbErrorMessage, restoreDb } from "@/db/client";
 import { DIMENSIONS, type Dimension } from "@/db/schema";
 import { useCreateIngredientCategory, useDeleteIngredientCategory, useIngredientCategories } from "@/features/ingredients/api";
+import { useCreateAllergen, useDeleteAllergen, useAllergens } from "@/features/allergens/api";
 import { useCreateTag, useDeleteTag, useTags } from "@/features/tags/api";
 import { DIMENSION_LABELS, useCreateUnit, useDeleteUnit, useUnits } from "@/features/units/api";
 import { formatNumber } from "@/lib/units";
@@ -33,6 +34,7 @@ export function SettingsPage() {
           <TabsList>
             <TabsTrigger value="categories">Categorie</TabsTrigger>
             <TabsTrigger value="tags">Tag</TabsTrigger>
+            <TabsTrigger value="allergens">Allergeni</TabsTrigger>
             <TabsTrigger value="units">Simbolo</TabsTrigger>
             <TabsTrigger value="preferences">Preferenze</TabsTrigger>
             <TabsTrigger value="backup">Backup</TabsTrigger>
@@ -42,6 +44,9 @@ export function SettingsPage() {
           </TabsContent>
           <TabsContent value="tags">
             <TagsTab />
+          </TabsContent>
+          <TabsContent value="allergens">
+            <AllergensTab />
           </TabsContent>
           <TabsContent value="units">
             <UnitsTab />
@@ -160,6 +165,56 @@ function TagsTab() {
               </Badge>
             ),
           )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AllergensTab() {
+  const { data: allergens = [] } = useAllergens();
+  const create = useCreateAllergen();
+  const del = useDeleteAllergen();
+  const [name, setName] = useState("");
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Allergeni</CardTitle>
+        <CardDescription>Gli allergeni si assegnano agli ingredienti; una ricetta ha quelli dei suoi ingredienti. Eliminandone uno, viene rimosso da tutti gli ingredienti.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <form className="flex max-w-sm gap-2" onSubmit={(e) => e.preventDefault()}>
+          <Input placeholder="Nuovo allergene (es. Kiwi)" value={name} onChange={(e) => setName(e.target.value)} />
+          <Button
+            type="button"
+            disabled={!name.trim()}
+            onClick={async () => {
+              if (!name.trim()) return;
+              await create.mutateAsync(name);
+              setName("");
+            }}
+          >
+            <Plus /> Aggiungi
+          </Button>
+        </form>
+        <div className="flex flex-wrap gap-2">
+          {allergens.length === 0 && <p className="text-muted-foreground text-sm">Nessun allergene.</p>}
+          {allergens.map((a) => (
+            <Badge key={a.id} variant="secondary" className="h-7 gap-1 pr-0.5 pl-2.5">
+              {a.name}
+              <ConfirmDialog
+                trigger={
+                  <Button variant="ghost" size="icon-xs" aria-label={`Elimina ${a.name}`}>
+                    <Trash2 />
+                  </Button>
+                }
+                title={`Eliminare l'allergene «${a.name}»?`}
+                description="Verrà rimosso da tutti gli ingredienti."
+                onConfirm={() => del.mutate(a.id)}
+              />
+            </Badge>
+          ))}
         </div>
       </CardContent>
     </Card>
