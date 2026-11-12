@@ -3,7 +3,6 @@ import { Pencil, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { RichText } from "@/components/rich-text";
@@ -16,7 +15,7 @@ export function RecipeDetailDialog({ recipeId, onClose }: { recipeId: string | n
 
   return (
     <Dialog open={!!recipeId} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-lg">
+      <DialogContent className="flex max-h-[85dvh] flex-col sm:max-w-lg">
         {isLoading || !recipe ? (
           <>
             <DialogHeader>
@@ -45,7 +44,9 @@ export function RecipeDetailDialog({ recipeId, onClose }: { recipeId: string | n
               </DialogDescription>
             </DialogHeader>
 
-            <ScrollArea className="-mx-6 min-h-0 flex-1 px-6">
+            {/* Plain overflow container: the dialog only has a max height, so a ScrollArea's
+                `h-full` viewport would not resolve and the content would spill out. */}
+            <div className="-mx-4 min-h-0 flex-1 overflow-y-auto px-4">
               <div className="space-y-5 pb-1">
                 <RichText value={recipe.description} />
 
@@ -67,7 +68,7 @@ export function RecipeDetailDialog({ recipeId, onClose }: { recipeId: string | n
                   )}
                 </section>
               </div>
-            </ScrollArea>
+            </div>
 
             <DialogFooter>
               <Button variant="outline" asChild>

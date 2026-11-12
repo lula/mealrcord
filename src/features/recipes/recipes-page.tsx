@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { BookOpen, Copy, EllipsisVertical, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, BookOpen, Copy, EllipsisVertical, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { PageBody, PageHeader } from "@/components/page";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { Badge } from "@/components/ui/badge";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ListPagination } from "@/components/list-pagination";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,7 +26,11 @@ import { TagBadges, TagPicker } from "@/features/tags/tag-picker";
 import { dishesUsingRecipe, mealsUsingRecipe, useDeleteRecipe, useDuplicateRecipe, useRecipes, type RecipeListItem } from "./api";
 import { format } from "date-fns";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZES = [20, 50, 100] as const;
+
+const SORT_LABELS = { name: "Nome", createdAt: "Data creazione", updatedAt: "Ultima modifica" } as const;
+export type RecipeSort = keyof typeof SORT_LABELS;
+export type SortDirection = "asc" | "desc";
 
 export function RecipesPage() {
   const { data: recipes, isLoading } = useRecipes();
@@ -37,15 +42,18 @@ export function RecipesPage() {
   const duplicate = useDuplicateRecipe();
 
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(20);
+  const [sort, setSort] = useState<RecipeSort>("name");
+  const [direction, setDirection] = useState<SortDirection>("asc");
 
-  // Most recently changed first, PAGE_SIZE per page.
+  // Sorted as chosen (name A→Z by default), `pageSize` per page.
   const filtered = useMemo(
-    () => filterRecipes(recipes ?? [], search, tagIds, allergenIds).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
-    [recipes, search, tagIds, allergenIds],
+    () => sortRecipes(filterRecipes(recipes ?? [], search, tagIds, allergenIds), sort, direction),
+    [recipes, search, tagIds, allergenIds, sort, direction],
   );
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, pageCount);
-  const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pageItems = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   async function askDelete(r: RecipeListItem) {
     const usedIn = await mealsUsingRecipe(r.id);
@@ -109,6 +117,29 @@ export function RecipesPage() {
                   Rimuovi filtri
                 </Button>
               )}
+              <div className="ml-auto flex gap-1">
+                <Select value={sort} onValueChange={(v) => (setSort(v as RecipeSort), setPage(1))}>
+                  <SelectTrigger className="w-44" aria-label="Ordina per">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(SORT_LABELS) as RecipeSort[]).map((k) => (
+                      <SelectItem key={k} value={k}>
+                        {SORT_LABELS[k]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={direction === "asc" ? "Crescente" : "Decrescente"}
+                  title={direction === "asc" ? "Crescente" : "Decrescente"}
+                  onClick={() => (setDirection((d) => (d === "asc" ? "desc" : "asc")), setPage(1))}
+                >
+                  {direction === "asc" ? <ArrowUpNarrowWide /> : <ArrowDownWideNarrow />}
+                </Button>
+              </div>
             </div>
             {filtered.length === 0 && !isLoading ? (
               <Empty className="border">
@@ -166,7 +197,30 @@ export function RecipesPage() {
                 ))}
               </div>
             )}
-            <ListPagination page={currentPage} pageCount={pageCount} onChange={setPage} />
+            {filtered.length > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                  <span>
+                    {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filtered.length)} di {filtered.length}
+                  </span>
+                  <span>·</span>
+                  <span>Per pagina</span>
+                  <Select value={String(pageSize)} onValueChange={(v) => (setPageSize(Number(v)), setPage(1))}>
+                    <SelectTrigger size="sm" className="w-20" aria-label="Ricette per pagina">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAGE_SIZES.map((n) => (
+                        <SelectItem key={n} value={String(n)}>
+                          {n}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <ListPagination page={currentPage} pageCount={pageCount} onChange={setPage} className="mx-0 w-auto" />
+              </div>
+            )}
           </>
         )}
       </PageBody>
@@ -189,6 +243,13 @@ export function RecipesPage() {
       </AlertDialog>
     </>
   );
+}
+
+/** Recipes ordered by `sort` (names compared the Italian way, ignoring case), ties broken by name. */
+export function sortRecipes<T extends { name: string; createdAt: string; updatedAt: string }>(recipes: T[], sort: RecipeSort, direction: SortDirection) {
+  const byName = (a: T, b: T) => a.name.localeCompare(b.name, "it", { sensitivity: "base" });
+  const sign = direction === "asc" ? 1 : -1;
+  return [...recipes].sort((a, b) => sign * (sort === "name" ? byName(a, b) : a[sort].localeCompare(b[sort]) || byName(a, b)));
 }
 
 /** Name contains `search` (case/accents ignored), has every tag in `tagIds` and every allergen in `allergenIds`. */

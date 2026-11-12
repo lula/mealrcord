@@ -45,10 +45,10 @@ export const shoppingListText = (title: string, period: string, subtitle: string
 export const plannedTitle = (entry: PlannedEntry) => `${entry.slot} ${entry.meal.name} ${format(parseISO(entry.date), "d-M-yyyy")}`;
 
 /**
- * One planned menu: its composition, then (new page) the shopping list total and
- * per recipe, then one page per recipe with its preparation.
+ * One planned menu: its composition, then (new page) the shopping list total,
+ * by ingredient category and per recipe, then one page per recipe with its preparation.
  */
-function plannedMenu<W extends DocWriter>(make: MakeWriter<W>, entry: PlannedEntry) {
+function plannedMenu<W extends DocWriter>(make: MakeWriter<W>, entry: PlannedEntry, groups: Group[]) {
   const descriptions = new Map<string, string>([
     ...entry.meal.recipes.map(({ recipe }) => [recipe.id, recipe.description] as const),
     ...entry.meal.dishes.flatMap(({ dish }) => dish.recipes.map(({ recipe }) => [recipe.id, recipe.description] as const)),
@@ -95,6 +95,10 @@ function plannedMenu<W extends DocWriter>(make: MakeWriter<W>, entry: PlannedEnt
   const total = aggregate(plannedLines(entry));
   if (total.length) pdf.table(rows(total));
   else pdf.paragraph("Nessun ingrediente.");
+  if (groups.length) {
+    pdf.heading("Per categoria");
+    categoriesSection(pdf, groups);
+  }
   pdf.heading("Per ricetta");
   for (const { recipe: r, context } of all) {
     pdf.heading(r.name, 2);
@@ -115,5 +119,6 @@ function plannedMenu<W extends DocWriter>(make: MakeWriter<W>, entry: PlannedEnt
   return pdf;
 }
 
-export const plannedMenuPdf = (entry: PlannedEntry) => plannedMenu(pdfWriter, entry);
-export const plannedMenuText = (entry: PlannedEntry) => plannedMenu(textWriter, entry).toString();
+/** `groups`: the menu's shopping list by ingredient category (see `useGroupByCategory`). */
+export const plannedMenuPdf = (entry: PlannedEntry, groups: Group[]) => plannedMenu(pdfWriter, entry, groups);
+export const plannedMenuText = (entry: PlannedEntry, groups: Group[]) => plannedMenu(textWriter, entry, groups).toString();

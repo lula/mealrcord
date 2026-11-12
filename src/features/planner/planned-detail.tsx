@@ -175,11 +175,13 @@ export function LinesByCategory({ lines, className }: { lines: AggregatedLine[];
 
 /** Saves a PDF or a text note of a planned menu: composition, shopping list and recipe preparations. */
 export function SharePlannedButton({ entry }: { entry: PlannedEntry }) {
+  const total = React.useMemo(() => aggregate(plannedLines(entry)), [entry]);
+  const groups = useGroupByCategory(total);
   return (
     <ShareMenu
       size="sm"
-      onPdf={() => sharePdf(plannedTitle(entry), plannedMenuPdf(entry))}
-      onText={() => shareText(plannedTitle(entry), plannedMenuText(entry))}
+      onPdf={() => sharePdf(plannedTitle(entry), plannedMenuPdf(entry, groups))}
+      onText={() => shareText(plannedTitle(entry), plannedMenuText(entry, groups))}
     />
   );
 }

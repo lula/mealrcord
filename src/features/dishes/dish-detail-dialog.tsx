@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router";
 import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatNumber } from "@/lib/units";
 import { useDish } from "./api";
@@ -14,7 +13,7 @@ export function DishDetailDialog({ dishId, onClose }: { dishId: string | null; o
 
   return (
     <Dialog open={!!dishId} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-lg">
+      <DialogContent className="flex max-h-[85dvh] flex-col sm:max-w-lg">
         {isLoading || !dish ? (
           <>
             <DialogHeader>
@@ -28,7 +27,7 @@ export function DishDetailDialog({ dishId, onClose }: { dishId: string | null; o
               <DialogTitle>{dish.name}</DialogTitle>
             </DialogHeader>
 
-            <ScrollArea className="-mx-6 min-h-0 flex-1 px-6">
+            <div className="-mx-4 min-h-0 flex-1 overflow-y-auto px-4">
               <div className="space-y-2 pb-1">
                 {dish.recipes.map((r) => (
                   <div key={r.recipeId}>
@@ -42,7 +41,7 @@ export function DishDetailDialog({ dishId, onClose }: { dishId: string | null; o
                   </div>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
 
             <DialogFooter>
               <Button variant="outline" asChild>
