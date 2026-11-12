@@ -41,8 +41,36 @@ jobs:
       - run: cargo test --lib
         working-directory: src-tauri
 
-  build:
+  # Create the draft release once, up front. Letting each matrix job create it
+  # races and produces duplicate drafts with the assets split between them.
+  create-release:
     needs: test
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    outputs:
+      release_id: ${{ steps.create.outputs.release_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: create
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          TAG="${{ github.ref_type == 'tag' && github.ref_name || '' }}"
+          TAG="${TAG:-v$VERSION}"
+          ID=$(gh api "repos/${{ github.repository }}/releases" --jq ".[] | select(.tag_name == \"$TAG\" and .draft) | .id" | head -n1)
+          if [ -z "$ID" ]; then
+            ID=$(gh api "repos/${{ github.repository }}/releases" -X POST \
+              -f tag_name="$TAG" -f target_commitish="${{ github.sha }}" \
+              -f name="mealrcord v$VERSION" \
+              -f body="Installer per macOS, Windows e Linux. Vedi gli allegati." \
+              -F draft=true -F prerelease=false --jq .id)
+          fi
+          echo "release_id=$ID" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: create-release
     permissions:
       contents: write
     strategy:
@@ -100,9 +128,5 @@ jobs:
           # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
-          tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
-          releaseName: mealrcord v__VERSION__
-          releaseBody: Installer per macOS, Windows e Linux. Vedi gli allegati.
-          releaseDraft: true
-          prerelease: false
+          releaseId: ${{ needs.create-release.outputs.release_id }}
           args: ${{ matrix.args }}
