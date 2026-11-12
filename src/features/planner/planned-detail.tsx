@@ -173,7 +173,7 @@ export function LinesByCategory({ lines, className }: { lines: AggregatedLine[];
   );
 }
 
-/** Saves a PDF or a text note of a planned menu: composition, shopping list and recipe preparations. */
+/** Saves a PDF or a text note of a planned menu: composition, shopping list and recipes (ingredients and preparation). */
 export function SharePlannedButton({ entry }: { entry: PlannedEntry }) {
   const total = React.useMemo(() => aggregate(plannedLines(entry)), [entry]);
   const groups = useGroupByCategory(total);

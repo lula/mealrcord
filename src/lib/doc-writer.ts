@@ -9,6 +9,8 @@ export interface DocWriter {
   pageBreak(): void;
   /** Title page: the title and grey lines under it. */
   cover(title: string, ...subtitles: string[]): void;
+  /** Page with just a centered title, opening a part of the document. */
+  divider(title: string): void;
   heading(value: string, level?: 1 | 2 | 3): void;
   /** One line pointing to `anchor(to)`. */
   link(value: string, to: string): void;
@@ -48,6 +50,13 @@ export class TextWriter implements DocWriter {
     this.title(title);
     for (const s of subtitles) this.subtitle(s);
     this.pageBreak();
+  }
+
+  divider(title: string) {
+    this.pageBreak();
+    const bar = "=".repeat(SEPARATOR.length);
+    const pad = " ".repeat(Math.max(0, Math.floor((SEPARATOR.length - title.length) / 2)));
+    this.push(`${bar}\n${pad}${title.toUpperCase()}\n${bar}`);
   }
 
   heading(value: string, level: 1 | 2 | 3 = 1) {

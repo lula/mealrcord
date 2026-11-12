@@ -45,8 +45,8 @@ export const shoppingListText = (title: string, period: string, subtitle: string
 export const plannedTitle = (entry: PlannedEntry) => `${entry.slot} ${entry.meal.name} ${format(parseISO(entry.date), "d-M-yyyy")}`;
 
 /**
- * One planned menu: its composition, then (new page) the shopping list total,
- * by ingredient category and per recipe, then one page per recipe with its preparation.
+ * One planned menu: its composition, then (after a "LISTA DELLA SPESA" page) the shopping list total,
+ * and by ingredient category, then (after a "RICETTE" page) one page per recipe with its ingredients and preparation.
  */
 function plannedMenu<W extends DocWriter>(make: MakeWriter<W>, entry: PlannedEntry, groups: Group[]) {
   const descriptions = new Map<string, string>([
@@ -89,9 +89,9 @@ function plannedMenu<W extends DocWriter>(make: MakeWriter<W>, entry: PlannedEnt
     }
   }
 
-  // 2. Shopping list: total and per recipe
-  pdf.pageBreak();
-  pdf.heading("Lista della spesa");
+  // 2. Shopping list: total and by category
+  pdf.divider("LISTA DELLA SPESA");
+  pdf.heading("Totale");
   const total = aggregate(plannedLines(entry));
   if (total.length) pdf.table(rows(total));
   else pdf.paragraph("Nessun ingrediente.");
@@ -99,20 +99,17 @@ function plannedMenu<W extends DocWriter>(make: MakeWriter<W>, entry: PlannedEnt
     pdf.heading("Per categoria");
     categoriesSection(pdf, groups);
   }
-  pdf.heading("Per ricetta");
-  for (const { recipe: r, context } of all) {
-    pdf.heading(r.name, 2);
-    pdf.subtitle(context);
-    if (r.lines.length) pdf.table(r.lines.map((l) => [l.ingredientName, displayQuantity(l.quantity, l.unit)]));
-    else pdf.paragraph("Nessun ingrediente.", { muted: true });
-  }
 
-  // 3. One page per recipe with its preparation
+  // 3. One page per recipe with its ingredients and preparation
+  if (all.length) pdf.divider("RICETTE");
   for (const { recipe: r, context, key } of all) {
     pdf.pageBreak();
     pdf.anchor(key);
     pdf.title(r.name);
     pdf.subtitle(context);
+    pdf.heading("Ingredienti", 2);
+    if (r.lines.length) pdf.table(r.lines.map((l) => [l.ingredientName, displayQuantity(l.quantity, l.unit)]));
+    else pdf.paragraph("Nessun ingrediente.", { muted: true });
     pdf.heading("Preparazione", 2);
     pdf.paragraph(toPlainParagraphs(descriptions.get(r.recipeId) ?? "") || "Nessuna preparazione indicata.");
   }

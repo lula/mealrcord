@@ -120,6 +120,25 @@ export class PdfWriter implements DocWriter {
     this.y = TOP;
   }
 
+  /** A page with just `title`, centered: opens a part of the document; what follows starts on a new page. */
+  divider(title: string) {
+    this.pageBreak();
+    const { doc } = this;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(28);
+    doc.setTextColor(0, 0, 0);
+    const lines = doc.splitTextToSize(title, this.width) as string[];
+    const lineHeight = 28 * 0.3528 * 1.25;
+    let y = doc.internal.pageSize.getHeight() / 2 - ((lines.length - 1) * lineHeight) / 2;
+    for (const line of lines) {
+      doc.text(line, doc.internal.pageSize.getWidth() / 2, y, { align: "center" });
+      y += lineHeight;
+    }
+    doc.setFont("helvetica", "normal");
+    doc.addPage();
+    this.y = TOP;
+  }
+
   heading(value: string, level: 1 | 2 | 3 = 1) {
     const size = { 1: 15, 2: 12, 3: 11 }[level];
     this.ensure(18); // keep the heading with at least a line of what follows
